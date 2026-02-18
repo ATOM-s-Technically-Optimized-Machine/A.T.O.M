@@ -1,0 +1,6 @@
+[submodule "modules/core"]
+	path = modules/core
+	url = git@github.com:ATOM-s-Technically-Optimized-Machine/module-core.git
+[submodule "modules/renderer"]
+	path = modules/renderer
+	url = git@github.com:ATOM-s-Technically-Optimized-Machine/module-renderer.git
