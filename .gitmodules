@@ -4,3 +4,24 @@
 [submodule "modules/renderer"]
 	path = modules/renderer
 	url = git@github.com:ATOM-s-Technically-Optimized-Machine/module-renderer.git
+[submodule "modules/inputs"]
+	path = modules/inputs
+	url = git@github.com:ATOM-s-Technically-Optimized-Machine/module-inputs.git
+[submodule "modules/audio"]
+	path = modules/audio
+	url = git@github.com:ATOM-s-Technically-Optimized-Machine/module-audio.git
+[submodule "modules/physics"]
+	path = modules/physics
+	url = git@github.com:ATOM-s-Technically-Optimized-Machine/module-physics.git
+[submodule "modules/ressources"]
+	path = modules/ressources
+	url = git@github.com:ATOM-s-Technically-Optimized-Machine/module-ressources.git
+[submodule "modules/script"]
+	path = modules/script
+	url = git@github.com:ATOM-s-Technically-Optimized-Machine/module-script.git
+[submodule "modules/tools"]
+	path = modules/tools
+	url = git@github.com:ATOM-s-Technically-Optimized-Machine/module-tools.git
+[submodule "modules/network"]
+	path = modules/network
+	url = git@github.com:ATOM-s-Technically-Optimized-Machine/module-network.git
