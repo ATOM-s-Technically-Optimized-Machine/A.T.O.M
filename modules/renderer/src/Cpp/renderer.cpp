@@ -1,7 +1,9 @@
 #include <renderer/glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
-
 
 float vertices[] = {
     0.0f, 0.5f, 0.0f,
@@ -23,9 +25,13 @@ unsigned int indices[] = {
 const char *vertexShaderSrc = R"(
     #version 410 core
     layout (location = 0) in vec3 aPos;
+
+    uniform mat4 model;
+    uniform mat4 view;
+    uniform mat4 projection;
     
     void main() {
-        gl_Position = vec4(aPos, 1.0);
+        gl_Position = projection * view * model * vec4(aPos, 1.0);
     }
 )";
 
@@ -62,6 +68,8 @@ int main(void)
         std::cerr << "Failed to init GLAD" << std::endl;
         return -1;
     }
+
+    glEnable(GL_DEPTH_TEST);
 
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSrc, NULL);
@@ -100,10 +108,27 @@ int main(void)
 
     glBindVertexArray(0);
 
+
+    glm::mat4 view = glm::lookAt(
+        glm::vec3(0.0f, 1.0f, 3.0f),
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+
+    glm::mat4 projection = glm::perspective(
+        glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f
+    );
+
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        float time = (float)glfwGetTime();
+        glm::mat4 model = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0, 1, 0));
+
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, 0);
