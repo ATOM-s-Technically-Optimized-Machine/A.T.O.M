@@ -57,8 +57,8 @@ git commit -m "build(deps): update <subsystem> to vX.Y.Z
 
 Brief summary of what changed.
 Refs: <subsystem-repo> vX.Y.Z"
-# push to a branch and open a PR, or push directly to main if you have access
-git push origin main
+git push origin build/update-<subsystem>
+# open a PR — only integrators merge into main
 ```
 
 ---
@@ -67,9 +67,10 @@ git push origin main
 
 All subsystems live under `modules/` as Git submodules. The main repo tracks a **pinned commit SHA** for each submodule — not a branch.
 
-Two rules to always keep in mind:
-- **Never push directly to `main`** in a submodule unless you are the integrator. Work in a branch and open a PR.
+Three rules to always keep in mind:
+- **Never push directly to `main`** — in any repo, submodule or main. Always work in a branch and open a PR. Only designated integrators merge into `main`.
 - **The main repo pin does not need to reflect every submodule commit.** Only bump it when a feature or fix is ready to be integrated.
+- **All changes go through PRs.** No exceptions, regardless of how small the change is.
 
 ### Check submodule status
 
@@ -113,11 +114,13 @@ Once the PR is merged and you are ready to integrate into the main repo:
 cd modules/<subsystem>
 git checkout main && git pull origin main
 
-# back in the main repo, update the pin
+# back in the main repo, update the pin in a branch
 cd ../..
+git checkout -b build/bump-<subsystem>
 git add modules/<subsystem>
 git commit -m "build(deps): bump <subsystem>"
-git push origin main
+git push origin build/bump-<subsystem>
+# open a PR — only integrators merge into main
 ```
 
 The pin update to the main repo is a separate, deliberate step — not something that happens automatically after every submodule commit.
@@ -137,10 +140,11 @@ git submodule update --remote
 Only bump the pin in the main repo when the update is intentional and ready to integrate:
 
 ```bash
+git checkout -b build/update-<subsystem>
 git add modules/<subsystem>
 git commit -m "build(deps): update <subsystem> to latest"
-# push to a branch and open a PR, or directly to main if appropriate
-git push origin main
+git push origin build/update-<subsystem>
+# open a PR — only integrators merge into main
 ```
 
 ---
@@ -153,16 +157,20 @@ Use this when you want the main repo to point to an older commit of a submodule 
 # find the main repo commit where the submodule was at the right state
 git log --oneline
 
-# check out that specific main repo commit's version of the submodule pin
+# create a branch for the revert
+git checkout -b revert/pin-<subsystem>
+
+# restore that commit's version of the submodule pin
 git checkout <main-repo-commit-sha> -- modules/<subsystem>
 
 # verify the submodule now points to the right commit
 git submodule status
 
-# commit the reverted pin
+# commit the reverted pin and open a PR
 git add modules/<subsystem>
 git commit -m "revert(deps): pin <subsystem> back to <commit-sha>"
-git push origin main
+git push origin revert/pin-<subsystem>
+# open a PR — only integrators merge into main
 ```
 
 ---
@@ -174,21 +182,23 @@ Use this when you need to undo changes inside a submodule itself.
 ```bash
 cd modules/<subsystem>
 
-# find the commit you want to go back to
+# find the bad commit to revert
 git log --oneline
 
-# check out that commit
-git checkout <commit-sha>
+# create a branch and revert the bad commit (never force-push shared branches)
+git checkout -b revert/<bad-commit-sha>
+git revert <bad-commit-sha>
+git push origin revert/<bad-commit-sha>
+# open a PR in the submodule repo — only integrators merge into main
 
-# push as a new commit on main (never force-push shared branches)
-git revert <bad-commit-sha>   # or create a fix commit
-git push origin main
-
-# back in the main repo, update the pin to the reverted state
+# once merged, pull main and update the pin in the main repo
+git checkout main && git pull origin main
 cd ../..
+git checkout -b revert/pin-<subsystem>
 git add modules/<subsystem>
 git commit -m "revert(deps): revert <subsystem> to <commit-sha>"
-git push origin main
+git push origin revert/pin-<subsystem>
+# open a PR — only integrators merge into main
 ```
 
 ---
