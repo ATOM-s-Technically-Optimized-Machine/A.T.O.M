@@ -4,9 +4,20 @@
 
 
 float vertices[] = {
-    -0.5f, -0.5f, -0.0f,
-    0.5f, -0.5f, 0.0f,
-    0.0f, 0.5f, 0.5f
+    0.0f, 0.5f, 0.0f,
+    0.5f, -0.5f, 0.5f,
+    0.5f, -0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f,
+    -0.5f, -0.5f, 0.5f
+};
+
+unsigned int indices[] = {
+    0, 1, 4,
+    0, 2, 1,
+    0, 3, 2,
+    0, 4, 3,
+    1, 2, 3,
+    1, 3, 4
 };
 
 const char *vertexShaderSrc = R"(
@@ -23,7 +34,7 @@ const char *fragmentShaderSrc = R"(
     out vec4 FragColor;
     
     void main() {
-        FragColor = vec4(1.0, 0.5, 0.2, 1.0);
+        FragColor = vec4(0.1, 0.9, 0.2, 1.0);
     }
 )";
 
@@ -71,9 +82,10 @@ int main(void)
     int iter = 0;
     int mode = 0;
 
-    unsigned int VAO, VBO;
+    unsigned int VAO, VBO, EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
 
     glBindVertexArray(VAO);
 
@@ -82,21 +94,19 @@ int main(void)
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
     glEnableVertexAttribArray(0);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     glBindVertexArray(0);
 
     while (!glfwWindowShouldClose(window)) {
-        if (iter % 10 == 0) mode = !mode;
-        if (mode == 0) {
-            glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
-        } else
-            glClearColor(0.5f, 0.4f, 0.15f, 1.0f);
-        
+        glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
         glfwSwapBuffers(window);
         glfwPollEvents();
