@@ -29,18 +29,28 @@ const char *vertexShaderSrc = R"(
     uniform mat4 model;
     uniform mat4 view;
     uniform mat4 projection;
-    
+
+    out vec3 fragPos;
+
     void main() {
+        fragPos = vec3(model * vec4(aPos, 1.0));
         gl_Position = projection * view * model * vec4(aPos, 1.0);
     }
 )";
 
 const char *fragmentShaderSrc = R"(
     #version 410 core
+
+    in vec3 fragPos;
+
     out vec4 FragColor;
     
     void main() {
-        FragColor = vec4(0.1, 0.9, 0.2, 1.0);
+        vec3 normal = normalize(cross(dFdx(fragPos), dFdy(fragPos)));
+        vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
+        float diff = max(dot(normal, lightDir), 0.0);
+        float brightness = 0.15 + diff;
+        FragColor = vec4(vec3(0.1, 0.9, 0.2) * brightness, 1.0);
     }
 )";
 
@@ -124,7 +134,6 @@ int main(void)
 
     glBindVertexArray(0);
 
-
     glm::mat4 view = glm::lookAt(
         glm::vec3(0.0f, 1.0f, 3.0f),
         glm::vec3(0.0f, 0.0f, 0.0f),
@@ -142,10 +151,10 @@ int main(void)
         float time = (float)glfwGetTime();
         glm::mat4 model = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0, 1, 0));
 
+        glUseProgram(shaderProgram);
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
