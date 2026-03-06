@@ -1,11 +1,16 @@
+#include <glm/trigonometric.hpp>
 #include <renderer/glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
+#include "core/ECS/ECS.hpp"
+#include "core/ECS/Includes.hpp"
+#include "renderer/RenderSystem.hpp"
+#include "renderer/Renderer.hpp"
 
-float vertices[] = {
+std::vector<float> vertices = {
     0.0f, 0.5f, 0.0f,
     0.5f, -0.5f, 0.5f,
     0.5f, -0.5f, -0.5f,
@@ -13,7 +18,7 @@ float vertices[] = {
     -0.5f, -0.5f, 0.5f
 };
 
-unsigned int indices[] = {
+std::vector<unsigned int> indices = {
     0, 1, 4,
     0, 2, 1,
     0, 3, 2,
@@ -22,37 +27,31 @@ unsigned int indices[] = {
     1, 3, 4
 };
 
-const char *vertexShaderSrc = R"(
-    #version 410 core
-    layout (location = 0) in vec3 aPos;
+std::vector<float> cubeVertices = {
+    -0.5, -0.5, 0.5,
+    0.5, -0.5, 0.5,
+    0.5, -0.5, -0.5,
+    -0.5, -0.5, -0.5,
+    -0.5, 0.5, 0.5,
+    0.5, 0.5, 0.5,
+    0.5, 0.5, -0.5,
+    -0.5, 0.5, -0.5
+};
 
-    uniform mat4 model;
-    uniform mat4 view;
-    uniform mat4 projection;
-
-    out vec3 fragPos;
-
-    void main() {
-        fragPos = vec3(model * vec4(aPos, 1.0));
-        gl_Position = projection * view * model * vec4(aPos, 1.0);
-    }
-)";
-
-const char *fragmentShaderSrc = R"(
-    #version 410 core
-
-    in vec3 fragPos;
-
-    out vec4 FragColor;
-    
-    void main() {
-        vec3 normal = normalize(cross(dFdx(fragPos), dFdy(fragPos)));
-        vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
-        float diff = max(dot(normal, lightDir), 0.0);
-        float brightness = 0.15 + diff;
-        FragColor = vec4(vec3(0.1, 0.9, 0.2) * brightness, 1.0);
-    }
-)";
+std::vector<unsigned int> cubeIndices {
+    0, 1, 5,
+    0, 4, 5,
+    0, 1, 2,
+    0, 3, 2,
+    0, 4, 7,
+    0, 3, 7, 
+    6, 2, 3,
+    6, 7, 3,
+    6, 5, 1,
+    6, 2, 1,
+    6, 7, 4,
+    6, 5, 4
+};
 
 int main(void)
 {
@@ -81,58 +80,13 @@ int main(void)
 
     glEnable(GL_DEPTH_TEST);
 
-    int success;
-
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSrc, NULL);
-    glCompileShader(vertexShader);
-
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        char log[512];
-        glGetShaderInfoLog(vertexShader, 512, NULL, log);
-        std::cerr << "Shader error: " << log << std::endl;
-    }
-
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSrc, NULL);
-    glCompileShader(fragmentShader);
-
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        char log[512];
-        glGetShaderInfoLog(fragmentShader, 512, NULL, log);
-        std::cerr << "Shader error: " << log << std::endl;
-    }
-
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
+    int shaderProgram = renderer::loadShaderProgram(
+        "modules/renderer/src/shaders/default.vert",
+        "modules/renderer/src/shaders/default.frag"
+    );
 
     int iter = 0;
     int mode = 0;
-
-    unsigned int VAO, VBO, EBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
-    glEnableVertexAttribArray(0);
-    
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    glBindVertexArray(0);
 
     glm::mat4 view = glm::lookAt(
         glm::vec3(0.0f, 1.0f, 3.0f),
@@ -144,25 +98,41 @@ int main(void)
         glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f
     );
 
+    ECS::ECS ecs = ECS::ECS();
+
+    ecs.registerComponent<MeshHandleComponent>();
+    ecs.registerComponent<TransformComponent>();
+
+    ecs.addSystem<RenderSystem>(shaderProgram, window, view, projection);
+
+    ECS::EntityID pyramid = ecs.entityCreate();
+
+    auto &pyramid_mesh = ecs.entityAddComponent<MeshHandleComponent>(pyramid);
+    auto &pyramid_transform = ecs.entityAddComponent<TransformComponent>(pyramid);
+
+    pyramid_mesh = MeshHandleComponent::Create(vertices, indices);
+    pyramid_transform.position.x -= 1;
+
+    ECS::EntityID cube = ecs.entityCreate();
+
+    auto &cube_mesh = ecs.entityAddComponent<MeshHandleComponent>(cube);
+    auto &cube_transform = ecs.entityAddComponent<TransformComponent>(cube);
+
+    cube_mesh = MeshHandleComponent::Create(cubeVertices, cubeIndices);
+    cube_transform.position.x += 1;
+    cube_transform.scale = glm::vec3(0.5f);
+
     while (!glfwWindowShouldClose(window)) {
-        glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        ecs.Update();
 
         float time = (float)glfwGetTime();
-        glm::mat4 model = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0, 1, 0));
+        cube_transform.rotation = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0, 1, 1));
+        pyramid_transform.rotation = glm::rotate(glm::mat4(1.0f), time, glm::vec3(1, -1, 0));
 
-        glUseProgram(shaderProgram);
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-        glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
-        glfwSwapBuffers(window);
-        glfwPollEvents();
         iter++;
     }
 
+    glDeleteProgram(shaderProgram);
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;

@@ -10,6 +10,8 @@ target_include_directories(atom-renderer PUBLIC include)
 target_sources(atom-renderer PRIVATE
     src/C/renderer.c
     src/C/glad/glad.c
+    src/Cpp/RenderSystem.cpp
+    src/Cpp/Renderer.cpp
 )
 
 target_link_libraries(atom-renderer PUBLIC
