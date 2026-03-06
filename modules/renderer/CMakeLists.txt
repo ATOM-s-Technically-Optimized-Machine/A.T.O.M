@@ -8,6 +8,8 @@ add_library(atom-renderer)
 target_include_directories(atom-renderer PUBLIC include)
 
 target_sources(atom-renderer PRIVATE
+    src/libs/C/stb_image.c
+    src/libs/Cpp/tiny_obj_loader.cpp
     src/C/renderer.c
     src/C/glad/glad.c
     src/Cpp/RenderSystem.cpp

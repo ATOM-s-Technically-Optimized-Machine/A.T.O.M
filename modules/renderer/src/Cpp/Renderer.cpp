@@ -1,5 +1,6 @@
 #include <renderer/glad/glad.h>
 #include "renderer/Renderer.hpp"
+#include "renderer/stb_image.h"
 #include <fstream>
 #include <iterator>
 #include <iostream>
@@ -49,6 +50,21 @@ unsigned int loadShaderProgram(const std::string &vertPath, const std::string &f
     glDeleteShader(fragmentShader);
 
     return shaderProgram;
+}
+
+unsigned int loadTexture(const std::string &textPath)
+{
+    int w, h, channels;
+    unsigned char *data = stbi_load(textPath.c_str(), &w, &h, &channels, 0);
+    unsigned int tex;
+
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(data);
+
+    return tex;
 }
 
 }

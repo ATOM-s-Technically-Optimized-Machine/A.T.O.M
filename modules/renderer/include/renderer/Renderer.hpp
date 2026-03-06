@@ -6,6 +6,7 @@
 namespace renderer {
 
     unsigned int loadShaderProgram(const std::string &vertPath, const std::string &fragPath);
+    unsigned int loadTexture(const std::string &textPath);
 
 }
 

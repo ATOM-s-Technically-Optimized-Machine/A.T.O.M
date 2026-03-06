@@ -11,11 +11,21 @@
 struct MeshHandleComponent {
     unsigned int VAO, VBO, EBO;
     unsigned int indexCount;
+    unsigned int texture;
+
+    enum Attributes {
+        NONE        =   0       ,
+        COLORED     =   1u << 1 ,
+        UV_MAP      =   1u << 2
+    };
 
     static MeshHandleComponent Create(
         std::vector<float> &vertices,
-        std::vector<unsigned int> &indices
+        std::vector<unsigned int> &indices,
+        Attributes attrib = Attributes::NONE
     );
+
+    static MeshHandleComponent loadMesh(const std::string &objPath);
 };
 
 struct TransformComponent {

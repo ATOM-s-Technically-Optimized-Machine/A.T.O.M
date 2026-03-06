@@ -11,11 +11,11 @@
 #include "renderer/Renderer.hpp"
 
 std::vector<float> vertices = {
-    0.0f, 0.5f, 0.0f,
-    0.5f, -0.5f, 0.5f,
-    0.5f, -0.5f, -0.5f,
-    -0.5f, -0.5f, -0.5f,
-    -0.5f, -0.5f, 0.5f
+    0.0f, 0.5f, 0.0f, 0.0f, 0.0f,
+    0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+    0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
+    -0.5f, -0.5f, 0.5f, 0.0f, 0.0f
 };
 
 std::vector<unsigned int> indices = {
@@ -28,14 +28,14 @@ std::vector<unsigned int> indices = {
 };
 
 std::vector<float> cubeVertices = {
-    -0.5, -0.5, 0.5,
-    0.5, -0.5, 0.5,
-    0.5, -0.5, -0.5,
-    -0.5, -0.5, -0.5,
-    -0.5, 0.5, 0.5,
-    0.5, 0.5, 0.5,
-    0.5, 0.5, -0.5,
-    -0.5, 0.5, -0.5
+    -0.5, -0.5, 0.5, 0.0f, 0.0f,
+    0.5, -0.5, 0.5, 0.0f, 0.0f,
+    0.5, -0.5, -0.5, 0.0f, 0.0f,
+    -0.5, -0.5, -0.5, 0.0f, 0.0f,
+    -0.5, 0.5, 0.5, 0.0f, 0.0f,
+    0.5, 0.5, 0.5, 0.0f, 0.0f,
+    0.5, 0.5, -0.5, 0.0f, 0.0f,
+    -0.5, 0.5, -0.5, 0.0f, 0.0f
 };
 
 std::vector<unsigned int> cubeIndices {
@@ -98,6 +98,8 @@ int main(void)
         glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f
     );
 
+    unsigned int obama = renderer::loadTexture("modules/renderer/obama.png");
+
     ECS::ECS ecs = ECS::ECS();
 
     ecs.registerComponent<MeshHandleComponent>();
@@ -110,24 +112,25 @@ int main(void)
     auto &pyramid_mesh = ecs.entityAddComponent<MeshHandleComponent>(pyramid);
     auto &pyramid_transform = ecs.entityAddComponent<TransformComponent>(pyramid);
 
-    pyramid_mesh = MeshHandleComponent::Create(vertices, indices);
-    pyramid_transform.position.x -= 1;
+    pyramid_mesh = MeshHandleComponent::loadMesh("modules/renderer/obamid.mesh");
+    pyramid_mesh.texture = obama;
+    // pyramid_transform.position.x -= 1;
 
-    ECS::EntityID cube = ecs.entityCreate();
+    // ECS::EntityID cube = ecs.entityCreate();
 
-    auto &cube_mesh = ecs.entityAddComponent<MeshHandleComponent>(cube);
-    auto &cube_transform = ecs.entityAddComponent<TransformComponent>(cube);
+    // auto &cube_mesh = ecs.entityAddComponent<MeshHandleComponent>(cube);
+    // auto &cube_transform = ecs.entityAddComponent<TransformComponent>(cube);
 
-    cube_mesh = MeshHandleComponent::Create(cubeVertices, cubeIndices);
-    cube_transform.position.x += 1;
-    cube_transform.scale = glm::vec3(0.5f);
+    // cube_mesh = MeshHandleComponent::Create(cubeVertices, cubeIndices,  MeshHandleComponent::Attributes::UV_MAP);
+    // cube_transform.position.x += 1;
+    // cube_transform.scale = glm::vec3(0.5f);
 
     while (!glfwWindowShouldClose(window)) {
         ecs.Update();
 
         float time = (float)glfwGetTime();
-        cube_transform.rotation = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0, 1, 1));
-        pyramid_transform.rotation = glm::rotate(glm::mat4(1.0f), time, glm::vec3(1, -1, 0));
+        // cube_transform.rotation = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0, 1, 1));
+        pyramid_transform.rotation = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0, 1, 0));
 
         iter++;
     }
