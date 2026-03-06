@@ -24,17 +24,13 @@
     #define ECS_HPP_
 
 #include <cstddef>
+#include <utility>
 #include <vector>
 #include <queue>
-#include <unordered_map>
-#include <string>
-#include <exception>
-#include <system_error>
 #include <algorithm>
 #include <unistd.h>
 
 #include "Registry.hpp"
-#include "Errors.hpp"
 #include "Includes.hpp"
 #include "Component.hpp"
 #include "System.hpp"
@@ -136,6 +132,13 @@ namespace ECS {
                 if (m_entities.size() <= id)
                     return;
                 m_entities[id].group = group;
+            }
+
+            EntityGroup entityGetGroup(EntityID id)
+            {
+                if (m_entities.size() <= id)
+                    return EntityGroup::NONE;
+                return m_entities[id].group;
             }
             
             /**
@@ -331,18 +334,25 @@ namespace ECS {
              * @param tickrate The ticks (calls to Update()) the system should skip after ticked
              * @return SystemID The new ID for the system
              */
-            template<SystemClass T>
-            SystemID addSystem(int tickrate = 0)
+            template<SystemClass T, typename... Args>
+            SystemID addSystem(Args&&... args)
             {
                 static SystemID id = 0;
                 SystemData data;
 
                 data.enabled = true;
-                data.sys = new T();
-                data.tickrate = tickrate;
+                data.sys = new T(std::forward<Args>(args)...);
+                data.tickrate = 0;
                 data.skipped_ticks = 0;
                 m_systems.push_back(data);
                 return id++;
+            }
+
+            void setSystemTickrate(SystemID sys_id, int tickrate)
+            {
+                if (sys_id >= m_systems.size())
+                    return;
+                m_systems[sys_id].tickrate = tickrate;
             }
 
             /**

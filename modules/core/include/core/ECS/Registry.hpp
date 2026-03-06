@@ -20,11 +20,7 @@
  *  USA
 */
 
-#include <atomic>
 #include <cstdint>
-#include <vector>
-#include <array>
-
 #include "Component.hpp"
 
 #ifndef REGISTRY_HPP_

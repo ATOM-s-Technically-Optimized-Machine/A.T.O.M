@@ -25,10 +25,11 @@
 
 #include "Includes.hpp"
 #include "Errors.hpp"
+#include <algorithm>
+#include <atomic>
 #include <vector>
 #include <limits>
 #include <cstdint>
-#include <iostream>
 
 namespace ECS {
 
@@ -178,7 +179,10 @@ namespace ECS {
              */
             const std::vector<EntityID> &getActiveEntities() {
                 if (m_cache_dirty) {
-                    m_cached_entities = m_data.dense_components;
+                    m_cached_entities.clear();
+                    m_cached_entities.reserve(m_data.dense_components.size());
+                    for (const auto &dc : m_data.dense_components)
+                        m_cached_entities.push_back(dc.entity);
                     std::sort(m_cached_entities.begin(), m_cached_entities.end());
                     m_cache_dirty = false;
                 }

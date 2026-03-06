@@ -23,20 +23,16 @@
 #ifndef INCLUDES_HPP_
     #define INCLUDES_HPP_
 
-    #include <cstddef>
-    #include <concepts>
     #include <type_traits>
-    #include <typeindex>
     #include <cstdint>
-    #include <atomic>
 
 namespace ECS {
     class ISystem;
     class ECS;
-        
+
     // Concept for accepting system classes
     template<typename T>
-    concept SystemClass = std::is_base_of_v<ISystem, T> && std::is_constructible_v<T>;
+    concept SystemClass = std::is_base_of_v<ISystem, T>;
 
     // Concept for accepting components
     template<typename T>
@@ -51,6 +47,7 @@ namespace ECS {
     // Entity groups, modify this enum to add new groups to the system
     enum EntityGroup {
         NONE,
+        ROTATING_TRIANGLE,
         EXAMPLES
     };
 
