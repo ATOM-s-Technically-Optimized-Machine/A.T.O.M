@@ -47,7 +47,6 @@ namespace ECS {
     // Entity groups, modify this enum to add new groups to the system
     enum EntityGroup {
         NONE,
-        ROTATING_TRIANGLE,
         EXAMPLES
     };
 
