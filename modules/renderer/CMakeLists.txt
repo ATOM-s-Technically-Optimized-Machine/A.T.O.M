@@ -25,6 +25,6 @@ target_link_libraries(atom-renderer PUBLIC
 
 # --- Sandbox executable (dev/test only) ---
 if(ATOM_RENDERER_SANDBOX)
-    add_executable(atom-renderer-sandbox src/Cpp/renderer.cpp)
+    add_executable(atom-renderer-sandbox src/Cpp/sandbox.cpp)
     target_link_libraries(atom-renderer-sandbox PRIVATE atom-renderer)
 endif()

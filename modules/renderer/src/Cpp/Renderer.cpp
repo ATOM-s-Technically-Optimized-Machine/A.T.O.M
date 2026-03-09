@@ -7,13 +7,26 @@
 
 namespace renderer {
 
-unsigned int loadShaderProgram(const std::string &vertPath, const std::string &fragPath)
-{
+unsigned int loadShaderProgram(
+    const std::string &vertPath,
+    const std::string &fragPath,
+    const std::string &defines
+) {
     std::ifstream vert_stream(vertPath);
     std::ifstream frag_stream(fragPath);
 
-    std::string vert_shader((std::istreambuf_iterator<char>(vert_stream)), std::istreambuf_iterator<char>());
-    std::string frag_shader((std::istreambuf_iterator<char>(frag_stream)), std::istreambuf_iterator<char>());
+    std::string vert_content((std::istreambuf_iterator<char>(vert_stream)), std::istreambuf_iterator<char>());
+    std::string frag_content((std::istreambuf_iterator<char>(frag_stream)), std::istreambuf_iterator<char>());
+
+    auto injectDefines = [&](const std::string &src) {
+        if (defines.empty()) return src;
+        size_t nl = src.find('\n');
+        if (nl == std::string::npos) return src + defines;
+        return src.substr(0, nl + 1) + defines + src.substr(nl + 1);
+    };
+
+    std::string vert_shader = injectDefines(vert_content);
+    std::string frag_shader = injectDefines(frag_content);
 
     const char *vert_raw = vert_shader.c_str();
     const char *frag_raw = frag_shader.c_str();

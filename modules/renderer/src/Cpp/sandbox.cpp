@@ -1,3 +1,5 @@
+#include <glm/ext/quaternion_trigonometric.hpp>
+#include <glm/fwd.hpp>
 #include <glm/trigonometric.hpp>
 #include <renderer/glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -28,14 +30,14 @@ std::vector<unsigned int> indices = {
 };
 
 std::vector<float> cubeVertices = {
-    -0.5, -0.5, 0.5, 0.0f, 0.0f,
-    0.5, -0.5, 0.5, 0.0f, 0.0f,
-    0.5, -0.5, -0.5, 0.0f, 0.0f,
-    -0.5, -0.5, -0.5, 0.0f, 0.0f,
-    -0.5, 0.5, 0.5, 0.0f, 0.0f,
-    0.5, 0.5, 0.5, 0.0f, 0.0f,
-    0.5, 0.5, -0.5, 0.0f, 0.0f,
-    -0.5, 0.5, -0.5, 0.0f, 0.0f
+    -0.5, -0.5, 0.5,
+    0.5, -0.5, 0.5,
+    0.5, -0.5, -0.5,
+    -0.5, -0.5, -0.5,
+    -0.5, 0.5, 0.5,
+    0.5, 0.5, 0.5,
+    0.5, 0.5, -0.5,
+    -0.5, 0.5, -0.5
 };
 
 std::vector<unsigned int> cubeIndices {
@@ -80,11 +82,6 @@ int main(void)
 
     glEnable(GL_DEPTH_TEST);
 
-    int shaderProgram = renderer::loadShaderProgram(
-        "modules/renderer/src/shaders/default.vert",
-        "modules/renderer/src/shaders/default.frag"
-    );
-
     int iter = 0;
     int mode = 0;
 
@@ -99,43 +96,58 @@ int main(void)
     );
 
     unsigned int obama = renderer::loadTexture("modules/renderer/obama.png");
+    MeshHandleComponent obama_mesh = MeshHandleComponent::loadMesh("modules/renderer/obamid.mesh");
 
     ECS::ECS ecs = ECS::ECS();
 
     ecs.registerComponent<MeshHandleComponent>();
     ecs.registerComponent<TransformComponent>();
+    ecs.registerComponent<CameraComponent>();
 
-    ecs.addSystem<RenderSystem>(shaderProgram, window, view, projection);
+    ECS::EntityID camera = ecs.entityCreate();
+
+    auto &cam_data = ecs.entityAddComponent<CameraComponent>(camera);
+    cam_data.fov = 70.0f;
+    cam_data.position = glm::vec3(0.0f, 1.0f, 5.0f);
+
+    ecs.addSystem<RenderSystem>(
+        "modules/renderer/src/shaders/default.vert",
+        "modules/renderer/src/shaders/default.frag",
+        window,
+        camera
+    );
 
     ECS::EntityID pyramid = ecs.entityCreate();
 
     auto &pyramid_mesh = ecs.entityAddComponent<MeshHandleComponent>(pyramid);
     auto &pyramid_transform = ecs.entityAddComponent<TransformComponent>(pyramid);
 
-    pyramid_mesh = MeshHandleComponent::loadMesh("modules/renderer/obamid.mesh");
+    pyramid_mesh = obama_mesh;
     pyramid_mesh.texture = obama;
-    // pyramid_transform.position.x -= 1;
 
-    // ECS::EntityID cube = ecs.entityCreate();
+    ECS::EntityID pyramid2 = ecs.entityCreate();
 
-    // auto &cube_mesh = ecs.entityAddComponent<MeshHandleComponent>(cube);
-    // auto &cube_transform = ecs.entityAddComponent<TransformComponent>(cube);
+    auto &pyramid2_mesh = ecs.entityAddComponent<MeshHandleComponent>(pyramid2);
+    auto &pyramid2_transform = ecs.entityAddComponent<TransformComponent>(pyramid2);
 
-    // cube_mesh = MeshHandleComponent::Create(cubeVertices, cubeIndices,  MeshHandleComponent::Attributes::UV_MAP);
-    // cube_transform.position.x += 1;
-    // cube_transform.scale = glm::vec3(0.5f);
+    pyramid2_mesh = obama_mesh;
+    pyramid2_mesh.texture = obama;
+
+    pyramid2_transform.position.x = 1.5f;
+    pyramid2_transform.scale = glm::vec3(0.5f);
 
     while (!glfwWindowShouldClose(window)) {
         ecs.Update();
 
         float time = (float)glfwGetTime();
-        // cube_transform.rotation = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0, 1, 1));
-        pyramid_transform.rotation = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0, 1, 0));
+        pyramid_transform.rotation = glm::angleAxis(time, glm::vec3(0.0f, 1.0f, 0.0f));
+        pyramid2_transform.rotation = glm::angleAxis(time, glm::vec3(0.0f, 1.0f, 0.0f));
+
+        cam_data.position.z = 3 + glm::sin(time);
 
         iter++;
     }
 
-    glDeleteProgram(shaderProgram);
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;

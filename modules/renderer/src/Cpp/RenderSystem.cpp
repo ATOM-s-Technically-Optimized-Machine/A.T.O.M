@@ -1,8 +1,10 @@
+#include "renderer/Renderer.hpp"
 #include "renderer/tiny_obj_loader.hpp"
 #include "renderer/glad/glad.h"
 #include "renderer/RenderSystem.hpp"
 #include "core/ECS/Includes.hpp"
 #include <GLFW/glfw3.h>
+#include <glm/ext/quaternion_geometric.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 
@@ -57,6 +59,7 @@ MeshHandleComponent MeshHandleComponent::Create(
     glBindVertexArray(0);
 
     meshHandle.indexCount = indices.size();
+    meshHandle.attributes = attrib;
 
     return meshHandle;
 }
@@ -94,14 +97,55 @@ MeshHandleComponent MeshHandleComponent::loadMesh(const std::string &objPath)
     return MeshHandleComponent::Create(verticies, indices, Attributes::UV_MAP);
 }
 
-RenderSystem::RenderSystem(unsigned int shaderProgram, GLFWwindow *window, glm::mat4 view, glm::mat4 projection)
-: m_shader_program(shaderProgram), m_window(window), m_view(view), m_projection(projection)
+glm::mat4 CameraComponent::getView(const CameraComponent &cam)
+{
+    glm::vec3 forward;
+
+    forward.x = cos(glm::radians(cam.yaw)) * cos(glm::radians(cam.pitch));
+    forward.y = sin(glm::radians(cam.pitch));
+    forward.z = sin(glm::radians(cam.yaw)) * cos(glm::radians(cam.pitch));
+    forward = glm::normalize(forward);
+
+    return glm::lookAt(cam.position, cam.position + forward, glm::vec3(0.0f, 1.0f, 0.0f));
+}
+
+glm::mat4 CameraComponent::getProjection(const CameraComponent &cam, float aspectRatio)
+{
+    return glm::perspective(glm::radians(cam.fov), aspectRatio, 0.1f, 100.0f);
+}
+
+RenderSystem::RenderSystem(
+    const std::string &vertShaderPath,
+    const std::string &fragShaderPath,
+    GLFWwindow *window,
+    ECS::EntityID cameraID
+) :
+    m_vert_path(vertShaderPath),
+    m_frag_path(fragShaderPath),
+    m_window(window),
+    m_active_camera(cameraID)
 {
 }
 
 RenderSystem::~RenderSystem()
 {
-    glDeleteProgram(m_shader_program);
+    for (auto &shader : m_shader_cache) {
+        glDeleteProgram(shader.second);
+    }
+}
+
+unsigned int RenderSystem::getShader(MeshHandleComponent::Attributes attrib)
+{
+    if (m_shader_cache.count(attrib))
+        return m_shader_cache[attrib];
+
+    std::string defines = "";
+    if (attrib & MeshHandleComponent::Attributes::UV_MAP) defines += "#define HAS_UV\n";
+    if (attrib & MeshHandleComponent::Attributes::COLORED) defines += "#define HAS_COLOR\n";
+
+    unsigned int prog = renderer::loadShaderProgram(m_vert_path, m_frag_path, defines);
+    m_shader_cache[attrib] = prog;
+    return prog;
 }
 
 void RenderSystem::Update(ECS::ECS &ecs, ECS::SystemID id, uint32_t ms)
@@ -109,11 +153,12 @@ void RenderSystem::Update(ECS::ECS &ecs, ECS::SystemID id, uint32_t ms)
     glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    glUseProgram(m_shader_program);
-    glUniformMatrix4fv(glGetUniformLocation(m_shader_program, "view"), 1, GL_FALSE, glm::value_ptr(m_view));
-    glUniformMatrix4fv(glGetUniformLocation(m_shader_program, "projection"), 1, GL_FALSE, glm::value_ptr(m_projection));
-
     auto entities = ecs.getEntitiesByComponentsAllOf<MeshHandleComponent, TransformComponent>();
+
+    auto &camera = ecs.entityGetComponent<CameraComponent>(m_active_camera);
+
+    glm::mat4 view = camera.getView(camera);
+    glm::mat4 projection = camera.getProjection(camera, 800.0f / 600.0f);
 
     for (auto e : entities) {
         auto &mesh = ecs.entityGetComponent<MeshHandleComponent>(e);
@@ -124,12 +169,19 @@ void RenderSystem::Update(ECS::ECS &ecs, ECS::SystemID id, uint32_t ms)
         model *= glm::mat4_cast(transform.rotation);
         model = glm::scale(model, transform.scale);
 
-        glUniformMatrix4fv(glad_glGetUniformLocation(m_shader_program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        unsigned int shader_prog = this->getShader(mesh.attributes);
+
+        glUseProgram(shader_prog);
+        glUniformMatrix4fv(glGetUniformLocation(shader_prog, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(shader_prog, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+
+        glUniformMatrix4fv(glad_glGetUniformLocation(shader_prog, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
         glad_glBindVertexArray(mesh.VAO);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, mesh.texture);
-        glUniform1i(glad_glGetUniformLocation(m_shader_program, "uTexture"), 0);
+        glUniform1i(glad_glGetUniformLocation(shader_prog, "uTexture"), 0);
         glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, 0);
         glad_glBindVertexArray(0);
     }
