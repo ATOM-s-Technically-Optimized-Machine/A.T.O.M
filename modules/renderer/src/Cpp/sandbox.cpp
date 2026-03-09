@@ -109,45 +109,11 @@ int main(void)
     auto &cam_data = ecs.entityAddComponent<CameraComponent>(camera);
     cam_data.fov = 70.0f;
     cam_data.position = glm::vec3(0.0f, 1.0f, 5.0f);
-    cam_data.ViewPort.height = 0.5f;
-    cam_data.ViewPort.width = 0.5f;
-
-    ECS::EntityID camera2 = ecs.entityCreate();
-
-    auto &cam2_data = ecs.entityAddComponent<CameraComponent>(camera2);
-    cam2_data.fov = 70.0f;
-    cam2_data.position = glm::vec3(3.0f, 1.0f, 3.0f);
-    cam2_data.yaw = -135.0f;
-    cam2_data.ViewPort.y = 0.5f;
-    cam2_data.ViewPort.height = 0.5f;
-    cam2_data.ViewPort.width = 0.5f;
-
-    ECS::EntityID camera3 = ecs.entityCreate();
-
-    auto &cam3_data = ecs.entityAddComponent<CameraComponent>(camera3);
-    cam3_data.fov = 70.0f;
-    cam3_data.position = glm::vec3(-2.0f, 1.0f, -2.0f);
-    cam3_data.yaw = 45.0f;
-    cam3_data.ViewPort.x = 0.5f;
-    cam3_data.ViewPort.height = 0.5f;
-    cam3_data.ViewPort.width = 0.5f;
-
-    ECS::EntityID camera4 = ecs.entityCreate();
-
-    auto &cam4_data = ecs.entityAddComponent<CameraComponent>(camera4);
-    cam4_data.fov = 70.0f;
-    cam4_data.position = glm::vec3(-5.0f, 1.0f, 0.0f);
-    cam4_data.yaw = 0.0f;
-    cam4_data.ViewPort.y = 0.5f;
-    cam4_data.ViewPort.x = 0.5f;
-    cam4_data.ViewPort.height = 0.5f;
-    cam4_data.ViewPort.width = 0.5f;
 
     ecs.addSystem<RenderSystem>(
         "modules/renderer/src/shaders/default.vert",
         "modules/renderer/src/shaders/default.frag",
-        window,
-        camera
+        window
     );
 
     ECS::EntityID pyramid = ecs.entityCreate();

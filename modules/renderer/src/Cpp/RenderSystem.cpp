@@ -117,13 +117,11 @@ glm::mat4 CameraComponent::getProjection(const CameraComponent &cam, float aspec
 RenderSystem::RenderSystem(
     const std::string &vertShaderPath,
     const std::string &fragShaderPath,
-    GLFWwindow *window,
-    ECS::EntityID cameraID
+    GLFWwindow *window
 ) :
     m_vert_path(vertShaderPath),
     m_frag_path(fragShaderPath),
-    m_window(window),
-    m_active_camera(cameraID)
+    m_window(window)
 {
 }
 
