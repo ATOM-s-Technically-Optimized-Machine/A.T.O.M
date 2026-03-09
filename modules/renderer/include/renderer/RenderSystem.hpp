@@ -43,13 +43,14 @@ struct CameraComponent {
     float yaw = -90.0f;
     float pitch = 0.0f;
     float fov = 45.0f;
+    bool enabled = true;
 
-    struct ViewPort {
+    struct {
         float x = 0.0f;
         float y = 0.0f;
         float width = 1.0f;
         float height = 1.0f;
-    };
+    } ViewPort;
 
     static glm::mat4 getView(const CameraComponent &cam);
     static glm::mat4 getProjection(const CameraComponent &cam, float aspectRatio);

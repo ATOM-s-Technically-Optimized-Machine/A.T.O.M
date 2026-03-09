@@ -152,38 +152,52 @@ void RenderSystem::Update(ECS::ECS &ecs, ECS::SystemID id, uint32_t ms)
 {
     glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    int W, H;
+    glfwGetFramebufferSize(m_window, &W, &H);
     
     auto entities = ecs.getEntitiesByComponentsAllOf<MeshHandleComponent, TransformComponent>();
+    auto cameras = ecs.getEntitiesByComponentsAllOf<CameraComponent>();
 
-    auto &camera = ecs.entityGetComponent<CameraComponent>(m_active_camera);
+    for (auto cam_id : cameras) {
+        auto &cam = ecs.entityGetComponent<CameraComponent>(cam_id);
 
-    glm::mat4 view = camera.getView(camera);
-    glm::mat4 projection = camera.getProjection(camera, 800.0f / 600.0f);
+        if (!cam.enabled)
+            continue;
+        
+        glm::mat4 view = cam.getView(cam);
+        glm::mat4 projection = cam.getProjection(cam, (cam.ViewPort.width * W) / (cam.ViewPort.height * H));
 
-    for (auto e : entities) {
-        auto &mesh = ecs.entityGetComponent<MeshHandleComponent>(e);
-        auto &transform = ecs.entityGetComponent<TransformComponent>(e);
-        glm::mat4 model = glm::mat4(1.0f);
+        glViewport(cam.ViewPort.x * W, cam.ViewPort.y * H, cam.ViewPort.width * W, cam.ViewPort.height * H);
+        glScissor(cam.ViewPort.x * W, cam.ViewPort.y * H, cam.ViewPort.width * W, cam.ViewPort.height * H);
+        glEnable(GL_SCISSOR_TEST);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        model = glm::translate(model, transform.position);
-        model *= glm::mat4_cast(transform.rotation);
-        model = glm::scale(model, transform.scale);
-
-        unsigned int shader_prog = this->getShader(mesh.attributes);
-
-        glUseProgram(shader_prog);
-        glUniformMatrix4fv(glGetUniformLocation(shader_prog, "view"), 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(glGetUniformLocation(shader_prog, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-
-
-        glUniformMatrix4fv(glad_glGetUniformLocation(shader_prog, "model"), 1, GL_FALSE, glm::value_ptr(model));
-
-        glad_glBindVertexArray(mesh.VAO);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, mesh.texture);
-        glUniform1i(glad_glGetUniformLocation(shader_prog, "uTexture"), 0);
-        glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, 0);
-        glad_glBindVertexArray(0);
+        for (auto e : entities) {
+            auto &mesh = ecs.entityGetComponent<MeshHandleComponent>(e);
+            auto &transform = ecs.entityGetComponent<TransformComponent>(e);
+            glm::mat4 model = glm::mat4(1.0f);
+            
+            model = glm::translate(model, transform.position);
+            model *= glm::mat4_cast(transform.rotation);
+            model = glm::scale(model, transform.scale);
+            
+            unsigned int shader_prog = this->getShader(mesh.attributes);
+            
+            glUseProgram(shader_prog);
+            glUniformMatrix4fv(glGetUniformLocation(shader_prog, "view"), 1, GL_FALSE, glm::value_ptr(view));
+            glUniformMatrix4fv(glGetUniformLocation(shader_prog, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+            
+            
+            glUniformMatrix4fv(glad_glGetUniformLocation(shader_prog, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            
+            glad_glBindVertexArray(mesh.VAO);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, mesh.texture);
+            glUniform1i(glad_glGetUniformLocation(shader_prog, "uTexture"), 0);
+            glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, 0);
+            glad_glBindVertexArray(0);
+        }
     }
 
     glfwSwapBuffers(m_window);
