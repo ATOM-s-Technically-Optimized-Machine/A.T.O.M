@@ -6,7 +6,30 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
-# Main library
+# ---- Options ----
+option(ATOM_INPUTS_BUILD_TESTS "Build unit tests" OFF)
+option(ATOM_INPUTS_ENABLE_ASAN "Enable AddressSanitizer" OFF)
+option(ATOM_INPUTS_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
+option(ATOM_INPUTS_ENABLE_COVERAGE "Enable code coverage (gcov)" OFF)
+
+# ---- Sanitizers ----
+if(ATOM_INPUTS_ENABLE_ASAN)
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address)
+endif()
+
+if(ATOM_INPUTS_ENABLE_UBSAN)
+    add_compile_options(-fsanitize=undefined)
+    add_link_options(-fsanitize=undefined)
+endif()
+
+# ---- Coverage ----
+if(ATOM_INPUTS_ENABLE_COVERAGE)
+    add_compile_options(--coverage -O0 -g)
+    add_link_options(--coverage)
+endif()
+
+# ---- Main library ----
 add_library(atom-inputs STATIC)
 
 target_sources(atom-inputs PRIVATE
@@ -36,6 +59,12 @@ target_compile_options(atom-inputs PRIVATE
     $<$<C_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic>
     $<$<C_COMPILER_ID:MSVC>:/W4>
 )
+
+# ---- Tests ----
+if(ATOM_INPUTS_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
 
 # Export for use as submodule
 set(ATOM_INPUTS_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include PARENT_SCOPE)
