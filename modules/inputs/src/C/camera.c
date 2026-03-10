@@ -4,6 +4,7 @@
  */
 
 #include "inputs/camera.h"
+
 #include <string.h>
 
 /* ============================================================================
@@ -12,30 +13,28 @@
 
 atom_camera_settings_t atom_camera_settings_default(void)
 {
-    atom_camera_settings_t settings = {
-        /* Movement */
-        .move_speed = 5.0f,
-        .sprint_multiplier = 2.0f,
+    atom_camera_settings_t settings = {/* Movement */
+                                       .move_speed = 5.0f,
+                                       .sprint_multiplier = 2.0f,
 
-        /* Mouse look */
-        .mouse_sensitivity = 0.1f,
-        .invert_y = false,
+                                       /* Mouse look */
+                                       .mouse_sensitivity = 0.1f,
+                                       .invert_y = false,
 
-        /* Pitch constraints */
-        .min_pitch_deg = -89.0f,
-        .max_pitch_deg = 89.0f,
+                                       /* Pitch constraints */
+                                       .min_pitch_deg = -89.0f,
+                                       .max_pitch_deg = 89.0f,
 
-        /* Orbital */
-        .orbit_distance = 10.0f,
-        .min_orbit_distance = 1.0f,
-        .max_orbit_distance = 100.0f,
-        .zoom_speed = 2.0f,
-        .pan_speed = 0.01f,
+                                       /* Orbital */
+                                       .orbit_distance = 10.0f,
+                                       .min_orbit_distance = 1.0f,
+                                       .max_orbit_distance = 100.0f,
+                                       .zoom_speed = 2.0f,
+                                       .pan_speed = 0.01f,
 
-        /* Smoothing */
-        .position_smoothing = 0.0f,
-        .rotation_smoothing = 0.0f
-    };
+                                       /* Smoothing */
+                                       .position_smoothing = 0.0f,
+                                       .rotation_smoothing = 0.0f};
     return settings;
 }
 
@@ -45,7 +44,8 @@ atom_camera_settings_t atom_camera_settings_default(void)
 
 void atom_camera_init(atom_camera_t *camera, atom_camera_mode_t mode)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
 
     memset(camera, 0, sizeof(atom_camera_t));
 
@@ -78,22 +78,19 @@ void atom_camera_init(atom_camera_t *camera, atom_camera_mode_t mode)
     camera->vectors_dirty = true;
 
     /* If orbital mode, calculate initial position from focal point */
-    if (mode == ATOM_CAMERA_MODE_ORBITAL) {
+    if (mode == ATOM_CAMERA_MODE_ORBITAL)
+    {
         camera->orbit_distance = camera->settings.orbit_distance;
-        camera->position = atom_vec3_add(
-            camera->focal_point,
-            atom_vec3_scale(atom_vec3_back(), camera->orbit_distance)
-        );
+        camera->position = atom_vec3_add(camera->focal_point,
+                                         atom_vec3_scale(atom_vec3_back(), camera->orbit_distance));
     }
 }
 
-void atom_camera_init_perspective(atom_camera_t *camera,
-                                  float fov_degrees,
-                                  float aspect,
-                                  float near_plane,
-                                  float far_plane)
+void atom_camera_init_perspective(atom_camera_t *camera, float fov_degrees, float aspect,
+                                  float near_plane, float far_plane)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
 
     camera->fov_rad = fov_degrees * ATOM_DEG_TO_RAD;
     camera->aspect_ratio = aspect;
@@ -108,14 +105,16 @@ void atom_camera_init_perspective(atom_camera_t *camera,
 
 void atom_camera_set_position(atom_camera_t *camera, atom_vec3_t position)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
     camera->position = position;
     camera->view_dirty = true;
 }
 
 void atom_camera_set_orientation(atom_camera_t *camera, atom_quat_t orientation)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
 
     camera->orientation = atom_quat_normalize(orientation);
 
@@ -129,14 +128,13 @@ void atom_camera_set_orientation(atom_camera_t *camera, atom_quat_t orientation)
 
 void atom_camera_set_euler(atom_camera_t *camera, float pitch_deg, float yaw_deg)
 {
-    atom_camera_set_euler_rad(camera,
-                              pitch_deg * ATOM_DEG_TO_RAD,
-                              yaw_deg * ATOM_DEG_TO_RAD);
+    atom_camera_set_euler_rad(camera, pitch_deg * ATOM_DEG_TO_RAD, yaw_deg * ATOM_DEG_TO_RAD);
 }
 
 void atom_camera_set_euler_rad(atom_camera_t *camera, float pitch, float yaw)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
 
     /* Constrain pitch */
     float min_pitch = camera->settings.min_pitch_deg * ATOM_DEG_TO_RAD;
@@ -149,11 +147,10 @@ void atom_camera_set_euler_rad(atom_camera_t *camera, float pitch, float yaw)
 
 void atom_camera_look_at(atom_camera_t *camera, atom_vec3_t target)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
 
-    atom_vec3_t direction = atom_vec3_normalize(
-        atom_vec3_sub(target, camera->position)
-    );
+    atom_vec3_t direction = atom_vec3_normalize(atom_vec3_sub(target, camera->position));
 
     /* Calculate yaw and pitch from direction */
     camera->yaw = atan2f(-direction.x, -direction.z);
@@ -173,20 +170,19 @@ void atom_camera_look_at(atom_camera_t *camera, atom_vec3_t target)
 
 void atom_camera_set_focal_point(atom_camera_t *camera, atom_vec3_t focal_point)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
     camera->focal_point = focal_point;
     camera->view_dirty = true;
 }
 
 void atom_camera_set_orbit_distance(atom_camera_t *camera, float distance)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
 
-    camera->orbit_distance = atom_clampf(
-        distance,
-        camera->settings.min_orbit_distance,
-        camera->settings.max_orbit_distance
-    );
+    camera->orbit_distance = atom_clampf(distance, camera->settings.min_orbit_distance,
+                                         camera->settings.max_orbit_distance);
     camera->view_dirty = true;
 }
 
@@ -194,13 +190,11 @@ void atom_camera_set_orbit_distance(atom_camera_t *camera, float distance)
  * Projection Setters
  * ============================================================================ */
 
-void atom_camera_set_perspective(atom_camera_t *camera,
-                                 float fov_degrees,
-                                 float aspect,
-                                 float near_plane,
-                                 float far_plane)
+void atom_camera_set_perspective(atom_camera_t *camera, float fov_degrees, float aspect,
+                                 float near_plane, float far_plane)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
 
     camera->fov_rad = fov_degrees * ATOM_DEG_TO_RAD;
     camera->aspect_ratio = aspect;
@@ -211,21 +205,24 @@ void atom_camera_set_perspective(atom_camera_t *camera,
 
 void atom_camera_set_fov(atom_camera_t *camera, float fov_degrees)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
     camera->fov_rad = fov_degrees * ATOM_DEG_TO_RAD;
     camera->projection_dirty = true;
 }
 
 void atom_camera_set_aspect(atom_camera_t *camera, float aspect)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
     camera->aspect_ratio = aspect;
     camera->projection_dirty = true;
 }
 
 void atom_camera_set_near_far(atom_camera_t *camera, float near_plane, float far_plane)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
     camera->near_plane = near_plane;
     camera->far_plane = far_plane;
     camera->projection_dirty = true;
@@ -235,23 +232,26 @@ void atom_camera_set_near_far(atom_camera_t *camera, float near_plane, float far
  * Matrix Getters
  * ============================================================================ */
 
-const atom_mat4_t* atom_camera_get_view_matrix(atom_camera_t *camera)
+const atom_mat4_t *atom_camera_get_view_matrix(atom_camera_t *camera)
 {
-    if (!camera) return NULL;
+    if (!camera)
+        return NULL;
     atom_camera_update_matrices(camera);
     return &camera->view_matrix;
 }
 
-const atom_mat4_t* atom_camera_get_projection_matrix(atom_camera_t *camera)
+const atom_mat4_t *atom_camera_get_projection_matrix(atom_camera_t *camera)
 {
-    if (!camera) return NULL;
+    if (!camera)
+        return NULL;
     atom_camera_update_matrices(camera);
     return &camera->projection_matrix;
 }
 
-const atom_mat4_t* atom_camera_get_view_projection(atom_camera_t *camera)
+const atom_mat4_t *atom_camera_get_view_projection(atom_camera_t *camera)
 {
-    if (!camera) return NULL;
+    if (!camera)
+        return NULL;
     atom_camera_update_matrices(camera);
     return &camera->view_projection;
 }
@@ -267,21 +267,24 @@ atom_vec3_t atom_camera_get_position(const atom_camera_t *camera)
 
 atom_vec3_t atom_camera_get_forward(atom_camera_t *camera)
 {
-    if (!camera) return atom_vec3_forward();
+    if (!camera)
+        return atom_vec3_forward();
     atom_camera_update_vectors(camera);
     return camera->forward;
 }
 
 atom_vec3_t atom_camera_get_right(atom_camera_t *camera)
 {
-    if (!camera) return atom_vec3_right();
+    if (!camera)
+        return atom_vec3_right();
     atom_camera_update_vectors(camera);
     return camera->right;
 }
 
 atom_vec3_t atom_camera_get_up(atom_camera_t *camera)
 {
-    if (!camera) return atom_vec3_up();
+    if (!camera)
+        return atom_vec3_up();
     atom_camera_update_vectors(camera);
     return camera->up;
 }
@@ -292,20 +295,22 @@ atom_vec3_t atom_camera_get_up(atom_camera_t *camera)
 
 void atom_camera_set_mode(atom_camera_t *camera, atom_camera_mode_t mode)
 {
-    if (!camera || camera->mode == mode) return;
+    if (!camera || camera->mode == mode)
+        return;
 
     atom_camera_mode_t old_mode = camera->mode;
     camera->mode = mode;
 
     /* Handle mode transition */
-    if (mode == ATOM_CAMERA_MODE_ORBITAL) {
+    if (mode == ATOM_CAMERA_MODE_ORBITAL)
+    {
         /* Switching TO orbital: set focal point in front of camera */
         atom_camera_update_vectors(camera);
         camera->focal_point = atom_vec3_add(
-            camera->position,
-            atom_vec3_scale(camera->forward, camera->orbit_distance)
-        );
-    } else if (old_mode == ATOM_CAMERA_MODE_ORBITAL) {
+            camera->position, atom_vec3_scale(camera->forward, camera->orbit_distance));
+    }
+    else if (old_mode == ATOM_CAMERA_MODE_ORBITAL)
+    {
         /* Switching FROM orbital: keep current position */
         /* Nothing special needed */
     }
@@ -324,7 +329,8 @@ atom_camera_mode_t atom_camera_get_mode(const atom_camera_t *camera)
 
 void atom_camera_update_vectors(atom_camera_t *camera)
 {
-    if (!camera || !camera->vectors_dirty) return;
+    if (!camera || !camera->vectors_dirty)
+        return;
 
     camera->forward = atom_quat_get_forward(camera->orientation);
     camera->right = atom_quat_get_right(camera->orientation);
@@ -335,54 +341,46 @@ void atom_camera_update_vectors(atom_camera_t *camera)
 
 void atom_camera_update_matrices(atom_camera_t *camera)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
 
     /* Update vectors first if needed */
     atom_camera_update_vectors(camera);
 
     /* Update projection matrix */
-    if (camera->projection_dirty) {
-        camera->projection_matrix = atom_mat4_perspective(
-            camera->fov_rad,
-            camera->aspect_ratio,
-            camera->near_plane,
-            camera->far_plane
-        );
+    if (camera->projection_dirty)
+    {
+        camera->projection_matrix = atom_mat4_perspective(camera->fov_rad, camera->aspect_ratio,
+                                                          camera->near_plane, camera->far_plane);
         camera->projection_dirty = false;
     }
 
     /* Update view matrix */
-    if (camera->view_dirty) {
+    if (camera->view_dirty)
+    {
         /* For orbital mode, recalculate position from focal point */
-        if (camera->mode == ATOM_CAMERA_MODE_ORBITAL) {
+        if (camera->mode == ATOM_CAMERA_MODE_ORBITAL)
+        {
             atom_vec3_t back = atom_vec3_negate(camera->forward);
-            camera->position = atom_vec3_add(
-                camera->focal_point,
-                atom_vec3_scale(back, camera->orbit_distance)
-            );
+            camera->position =
+                atom_vec3_add(camera->focal_point, atom_vec3_scale(back, camera->orbit_distance));
         }
 
         /* Build view matrix */
         atom_vec3_t target = atom_vec3_add(camera->position, camera->forward);
-        camera->view_matrix = atom_mat4_look_at(
-            camera->position,
-            target,
-            camera->up
-        );
+        camera->view_matrix = atom_mat4_look_at(camera->position, target, camera->up);
 
         camera->view_dirty = false;
     }
 
     /* Update combined matrix */
-    camera->view_projection = atom_mat4_multiply(
-        camera->projection_matrix,
-        camera->view_matrix
-    );
+    camera->view_projection = atom_mat4_multiply(camera->projection_matrix, camera->view_matrix);
 }
 
 void atom_camera_force_update(atom_camera_t *camera)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
 
     camera->vectors_dirty = true;
     camera->view_dirty = true;
@@ -393,7 +391,8 @@ void atom_camera_force_update(atom_camera_t *camera)
 
 void atom_camera_rebuild_orientation(atom_camera_t *camera)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
 
     /*
      * Rebuild quaternion from Euler angles.
