@@ -22,7 +22,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: lukka/get-cmake@latest
+      - name: Install build tools (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build
+
+      - name: Install build tools (macOS)
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja
 
       - name: Cache build
         uses: actions/cache@v4
@@ -34,7 +40,7 @@ jobs:
 
       - name: Configure
         run: >
-          cmake -B build
+          cmake -B build -G Ninja
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
@@ -58,22 +64,20 @@ jobs:
           clang-format-version: '17'
           check-path: 'include'
 
-      - uses: lukka/get-cmake@latest
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build clang-tidy cppcheck
 
       - name: Configure for analysis
         run: >
-          cmake -B build
+          cmake -B build -G Ninja
           -DCMAKE_BUILD_TYPE=Debug
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
       - name: clang-tidy
-        run: |
-          sudo apt-get install -y clang-tidy
-          run-clang-tidy -p build -header-filter='include/core/.*' src/C/
+        run: run-clang-tidy -p build -header-filter='include/core/.*' src/C/
 
       - name: cppcheck
         run: |
-          sudo apt-get install -y cppcheck
           cppcheck --enable=all --error-exitcode=1 \
             --suppress=missingIncludeSystem \
             --suppress=unusedFunction \
