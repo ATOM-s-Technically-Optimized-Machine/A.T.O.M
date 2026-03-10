@@ -212,9 +212,6 @@ void atom_input_state_process_event(atom_input_state_t *state, const atom_input_
         break;
 
     case ATOM_EVENT_WINDOW_CLOSE:
-        /* Handled at higher level */
-        break;
-
     default:
         break;
     }

@@ -19,7 +19,7 @@ atom_fps_camera_bindings_t atom_fps_camera_bindings_default(void)
         .up = ATOM_KEY_SPACE,
         .down = ATOM_KEY_LCTRL,
         .sprint = ATOM_KEY_LSHIFT,
-        .look_button = (atom_mouse_button_t)-1 /* Always active */
+        .look_button = ATOM_MOUSE_NONE /* Always active */
     };
     return bindings;
 }

@@ -151,6 +151,7 @@ extern "C"
 
     typedef enum atom_mouse_button
     {
+        ATOM_MOUSE_NONE = -1,
         ATOM_MOUSE_LEFT = 0,
         ATOM_MOUSE_MIDDLE,
         ATOM_MOUSE_RIGHT,
