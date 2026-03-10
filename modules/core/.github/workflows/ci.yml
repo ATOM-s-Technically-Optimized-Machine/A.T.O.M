@@ -34,7 +34,7 @@ jobs:
 
       - name: Configure
         run: >
-          cmake -B build -G Ninja
+          cmake -B build
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
@@ -62,7 +62,7 @@ jobs:
 
       - name: Configure for analysis
         run: >
-          cmake -B build -G Ninja
+          cmake -B build
           -DCMAKE_BUILD_TYPE=Debug
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
