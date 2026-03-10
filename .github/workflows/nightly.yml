@@ -1,0 +1,55 @@
+name: Nightly Build
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Every night at 2h UTC
+  workflow_dispatch:       # Manual trigger
+
+jobs:
+  nightly:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        build_type: [Debug, Release]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Update all submodules to latest main
+        run: |
+          git submodule foreach 'git fetch origin main && git checkout origin/main || true'
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Cache build
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: nightly-${{ runner.os }}-${{ matrix.build_type }}-${{ github.run_id }}
+          restore-keys: |
+            nightly-${{ runner.os }}-${{ matrix.build_type }}-
+
+      - name: Configure
+        run: >
+          cmake -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build
+        run: cmake --build build --config ${{ matrix.build_type }}
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure -C ${{ matrix.build_type }} || true
+
+      - name: Upload build artifacts
+        if: matrix.build_type == 'Release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-${{ runner.os }}-${{ matrix.build_type }}
+          path: build/
+          retention-days: 7

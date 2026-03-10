@@ -1,0 +1,70 @@
+name: Manual Submodule Update
+
+on:
+  workflow_dispatch:
+    inputs:
+      module:
+        description: 'Module to update (e.g., inputs, core, renderer) or "all"'
+        required: true
+        default: 'all'
+        type: string
+      ref:
+        description: 'Git ref to checkout (default: main)'
+        required: false
+        default: 'main'
+        type: string
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Update submodule(s)
+        run: |
+          MODULE="${{ inputs.module }}"
+          REF="${{ inputs.ref }}"
+
+          if [ "$MODULE" = "all" ]; then
+            echo "Updating ALL submodules to latest $REF..."
+            git submodule foreach "git fetch origin && git checkout origin/$REF || true"
+          else
+            MODULE_PATH="modules/$MODULE"
+            if [ ! -d "$MODULE_PATH" ]; then
+              echo "ERROR: Module '$MODULE_PATH' not found"
+              exit 1
+            fi
+            echo "Updating $MODULE_PATH to $REF..."
+            cd "$MODULE_PATH"
+            git fetch origin
+            git checkout "origin/$REF"
+          fi
+
+      - name: Commit changes
+        run: |
+          MODULE="${{ inputs.module }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add modules/
+          if git diff --cached --quiet; then
+            echo "No submodule changes to commit"
+          else
+            if [ "$MODULE" = "all" ]; then
+              git commit -m "build: update all submodules to latest ${{ inputs.ref }}"
+            else
+              git commit -m "build(${MODULE}): update submodule to latest ${{ inputs.ref }}"
+            fi
+            git push
+          fi
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Verify build
+        run: |
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          cmake --build build
+          ctest --test-dir build --output-on-failure || true

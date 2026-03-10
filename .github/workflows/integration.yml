@@ -1,0 +1,77 @@
+name: Integration
+
+on:
+  repository_dispatch:
+    types: [submodule-updated]
+
+concurrency:
+  group: integration-${{ github.event.client_payload.module }}
+  cancel-in-progress: true
+
+jobs:
+  update-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Update submodule to latest
+        run: |
+          MODULE_PATH="${{ github.event.client_payload.module_path }}"
+          SHA="${{ github.event.client_payload.sha }}"
+          echo "Updating $MODULE_PATH to $SHA"
+          cd "$MODULE_PATH"
+          git fetch origin
+          git checkout "$SHA"
+
+      - name: Configure
+        run: >
+          cmake -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure || true
+
+      - name: Commit submodule update
+        run: |
+          MODULE_PATH="${{ github.event.client_payload.module_path }}"
+          MODULE="${{ github.event.client_payload.module }}"
+          SHA="${{ github.event.client_payload.sha }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "$MODULE_PATH"
+          if git diff --cached --quiet; then
+            echo "No submodule changes to commit"
+          else
+            git commit -m "build(${MODULE}): update submodule to ${SHA:0:7}"
+            git push
+          fi
+
+      - name: Report status to source repo
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PAT_TOKEN }}
+          script: |
+            const payload = context.payload.client_payload;
+            const [owner, repo] = payload.repo.split('/');
+            const state = '${{ job.status }}' === 'success' ? 'success' : 'failure';
+            await github.rest.repos.createCommitStatus({
+              owner,
+              repo,
+              sha: payload.sha,
+              state,
+              context: 'A.T.O.M Integration',
+              description: state === 'success'
+                ? 'Engine build + integration passed'
+                : 'Engine integration failed',
+              target_url: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
+            });
