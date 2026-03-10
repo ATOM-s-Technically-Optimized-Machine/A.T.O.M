@@ -1,0 +1,159 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 16,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "ATOM_INPUTS_BUILD_TESTS": "ON"
+            }
+        },
+        {
+            "name": "dev-debug",
+            "displayName": "Dev Debug",
+            "inherits": "base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "dev-release",
+            "displayName": "Dev Release",
+            "inherits": "base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "ci-linux-debug",
+            "displayName": "CI Linux Debug",
+            "inherits": "base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "gcc"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
+            "name": "ci-linux-release",
+            "displayName": "CI Linux Release",
+            "inherits": "base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "gcc"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            }
+        },
+        {
+            "name": "ci-windows-debug",
+            "displayName": "CI Windows Debug",
+            "inherits": "base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "ci-windows-release",
+            "displayName": "CI Windows Release",
+            "inherits": "base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "ci-macos-debug",
+            "displayName": "CI macOS Debug",
+            "inherits": "base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "clang"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
+            "name": "ci-macos-release",
+            "displayName": "CI macOS Release",
+            "inherits": "base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "clang"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
+            "name": "ci-linux-asan",
+            "displayName": "CI Linux ASan+UBSan",
+            "inherits": "ci-linux-debug",
+            "cacheVariables": {
+                "ATOM_INPUTS_ENABLE_ASAN": "ON",
+                "ATOM_INPUTS_ENABLE_UBSAN": "ON"
+            }
+        },
+        {
+            "name": "ci-linux-coverage",
+            "displayName": "CI Linux Coverage",
+            "inherits": "ci-linux-debug",
+            "cacheVariables": {
+                "ATOM_INPUTS_ENABLE_COVERAGE": "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        { "name": "dev-debug", "configurePreset": "dev-debug" },
+        { "name": "dev-release", "configurePreset": "dev-release" },
+        { "name": "ci-linux-debug", "configurePreset": "ci-linux-debug" },
+        { "name": "ci-linux-release", "configurePreset": "ci-linux-release" },
+        { "name": "ci-linux-asan", "configurePreset": "ci-linux-asan" },
+        { "name": "ci-linux-coverage", "configurePreset": "ci-linux-coverage" }
+    ],
+    "testPresets": [
+        {
+            "name": "dev-debug",
+            "configurePreset": "dev-debug",
+            "output": { "outputOnFailure": true }
+        },
+        {
+            "name": "ci-linux-debug",
+            "configurePreset": "ci-linux-debug",
+            "output": { "outputOnFailure": true }
+        },
+        {
+            "name": "ci-linux-asan",
+            "configurePreset": "ci-linux-asan",
+            "output": { "outputOnFailure": true }
+        }
+    ]
+}

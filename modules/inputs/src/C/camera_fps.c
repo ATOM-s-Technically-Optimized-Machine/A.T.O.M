@@ -19,7 +19,7 @@ atom_fps_camera_bindings_t atom_fps_camera_bindings_default(void)
         .up = ATOM_KEY_SPACE,
         .down = ATOM_KEY_LCTRL,
         .sprint = ATOM_KEY_LSHIFT,
-        .look_button = (atom_mouse_button_t)-1  /* Always active */
+        .look_button = ATOM_MOUSE_NONE /* Always active */
     };
     return bindings;
 }
@@ -30,7 +30,8 @@ atom_fps_camera_bindings_t atom_fps_camera_bindings_default(void)
 
 void atom_fps_camera_init(atom_camera_t *camera)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
 
     atom_camera_init(camera, ATOM_CAMERA_MODE_FPS);
 
@@ -46,16 +47,16 @@ void atom_fps_camera_init(atom_camera_t *camera)
  * Main Update
  * ============================================================================ */
 
-void atom_fps_camera_update(atom_camera_t *camera,
-                            const atom_input_state_t *input,
-                            const atom_fps_camera_bindings_t *bindings,
-                            float delta_time)
+void atom_fps_camera_update(atom_camera_t *camera, const atom_input_state_t *input,
+                            const atom_fps_camera_bindings_t *bindings, float delta_time)
 {
-    if (!camera || !input) return;
+    if (!camera || !input)
+        return;
 
     /* Use default bindings if none provided */
     atom_fps_camera_bindings_t default_bindings;
-    if (!bindings) {
+    if (!bindings)
+    {
         default_bindings = atom_fps_camera_bindings_default();
         bindings = &default_bindings;
     }
@@ -71,38 +72,45 @@ void atom_fps_camera_update(atom_camera_t *camera,
  * Keyboard Processing
  * ============================================================================ */
 
-void atom_fps_camera_process_keyboard(atom_camera_t *camera,
-                                      const atom_input_state_t *input,
-                                      const atom_fps_camera_bindings_t *bindings,
-                                      float delta_time)
+void atom_fps_camera_process_keyboard(atom_camera_t *camera, const atom_input_state_t *input,
+                                      const atom_fps_camera_bindings_t *bindings, float delta_time)
 {
-    if (!camera || !input || !bindings) return;
+    if (!camera || !input || !bindings)
+        return;
 
     /* Build movement vector from key states */
     atom_vec3_t move = atom_vec3_zero();
 
     /* Forward/Backward */
-    if (atom_key_is_down(input, bindings->forward))  move.z -= 1.0f;
-    if (atom_key_is_down(input, bindings->backward)) move.z += 1.0f;
+    if (atom_key_is_down(input, bindings->forward))
+        move.z -= 1.0f;
+    if (atom_key_is_down(input, bindings->backward))
+        move.z += 1.0f;
 
     /* Left/Right (strafe) */
-    if (atom_key_is_down(input, bindings->left))  move.x -= 1.0f;
-    if (atom_key_is_down(input, bindings->right)) move.x += 1.0f;
+    if (atom_key_is_down(input, bindings->left))
+        move.x -= 1.0f;
+    if (atom_key_is_down(input, bindings->right))
+        move.x += 1.0f;
 
     /* Up/Down (fly mode) */
-    if (atom_key_is_down(input, bindings->up))   move.y += 1.0f;
-    if (atom_key_is_down(input, bindings->down)) move.y -= 1.0f;
+    if (atom_key_is_down(input, bindings->up))
+        move.y += 1.0f;
+    if (atom_key_is_down(input, bindings->down))
+        move.y -= 1.0f;
 
     /* Early exit if no movement */
     float len_sq = atom_vec3_length_sq(move);
-    if (len_sq < ATOM_EPSILON) return;
+    if (len_sq < ATOM_EPSILON)
+        return;
 
     /* Normalize to prevent diagonal speed boost */
     move = atom_vec3_scale(move, 1.0f / sqrtf(len_sq));
 
     /* Calculate speed */
     float speed = camera->settings.move_speed;
-    if (atom_key_is_down(input, bindings->sprint)) {
+    if (atom_key_is_down(input, bindings->sprint))
+    {
         speed *= camera->settings.sprint_multiplier;
     }
 
@@ -114,16 +122,18 @@ void atom_fps_camera_process_keyboard(atom_camera_t *camera,
  * Mouse Processing
  * ============================================================================ */
 
-void atom_fps_camera_process_mouse(atom_camera_t *camera,
-                                   const atom_input_state_t *input,
+void atom_fps_camera_process_mouse(atom_camera_t *camera, const atom_input_state_t *input,
                                    const atom_fps_camera_bindings_t *bindings)
 {
-    if (!camera || !input || !bindings) return;
+    if (!camera || !input || !bindings)
+        return;
 
     /* Check if look button is required */
-    if ((int)bindings->look_button >= 0) {
-        if (!atom_mouse_button_is_down(input, bindings->look_button)) {
-            return;  /* Look button not held */
+    if ((int)bindings->look_button >= 0)
+    {
+        if (!atom_mouse_button_is_down(input, bindings->look_button))
+        {
+            return; /* Look button not held */
         }
     }
 
@@ -132,7 +142,8 @@ void atom_fps_camera_process_mouse(atom_camera_t *camera,
     atom_mouse_get_delta(input, &delta_x, &delta_y);
 
     /* Skip if no movement */
-    if (delta_x == 0 && delta_y == 0) return;
+    if (delta_x == 0 && delta_y == 0)
+        return;
 
     /* Convert to rotation angles */
     float sensitivity = camera->settings.mouse_sensitivity * ATOM_DEG_TO_RAD;
@@ -141,7 +152,8 @@ void atom_fps_camera_process_mouse(atom_camera_t *camera,
     float delta_pitch = -(float)delta_y * sensitivity;
 
     /* Apply Y inversion if enabled */
-    if (camera->settings.invert_y) {
+    if (camera->settings.invert_y)
+    {
         delta_pitch = -delta_pitch;
     }
 
@@ -155,10 +167,12 @@ void atom_fps_camera_process_mouse(atom_camera_t *camera,
 
 void atom_fps_camera_move(atom_camera_t *camera, atom_vec3_t direction, float distance)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
 
     float len = atom_vec3_length(direction);
-    if (len < ATOM_EPSILON) return;
+    if (len < ATOM_EPSILON)
+        return;
 
     /* Normalize direction and apply distance */
     atom_vec3_t move = atom_vec3_scale(direction, distance / len);
@@ -169,7 +183,8 @@ void atom_fps_camera_move(atom_camera_t *camera, atom_vec3_t direction, float di
 
 void atom_fps_camera_move_local(atom_camera_t *camera, atom_vec3_t local_direction, float distance)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
 
     /* Ensure vectors are up to date */
     atom_camera_update_vectors(camera);
@@ -178,26 +193,23 @@ void atom_fps_camera_move_local(atom_camera_t *camera, atom_vec3_t local_directi
     atom_vec3_t world_move = atom_vec3_zero();
 
     /* X = right */
-    world_move = atom_vec3_add(world_move,
-        atom_vec3_scale(camera->right, local_direction.x));
+    world_move = atom_vec3_add(world_move, atom_vec3_scale(camera->right, local_direction.x));
 
     /* Y = up */
-    world_move = atom_vec3_add(world_move,
-        atom_vec3_scale(camera->up, local_direction.y));
+    world_move = atom_vec3_add(world_move, atom_vec3_scale(camera->up, local_direction.y));
 
     /* Z = back (negative forward) */
-    world_move = atom_vec3_add(world_move,
-        atom_vec3_scale(camera->forward, -local_direction.z));
+    world_move = atom_vec3_add(world_move, atom_vec3_scale(camera->forward, -local_direction.z));
 
     /* Apply movement */
-    camera->position = atom_vec3_add(camera->position,
-        atom_vec3_scale(world_move, distance));
+    camera->position = atom_vec3_add(camera->position, atom_vec3_scale(world_move, distance));
     camera->view_dirty = true;
 }
 
 void atom_fps_camera_rotate(atom_camera_t *camera, float delta_pitch, float delta_yaw)
 {
-    if (!camera) return;
+    if (!camera)
+        return;
 
     /* Update Euler angles */
     camera->yaw += delta_yaw;
@@ -217,7 +229,6 @@ void atom_fps_camera_rotate(atom_camera_t *camera, float delta_pitch, float delt
 
 void atom_fps_camera_rotate_deg(atom_camera_t *camera, float delta_pitch_deg, float delta_yaw_deg)
 {
-    atom_fps_camera_rotate(camera,
-                           delta_pitch_deg * ATOM_DEG_TO_RAD,
+    atom_fps_camera_rotate(camera, delta_pitch_deg * ATOM_DEG_TO_RAD,
                            delta_yaw_deg * ATOM_DEG_TO_RAD);
 }
