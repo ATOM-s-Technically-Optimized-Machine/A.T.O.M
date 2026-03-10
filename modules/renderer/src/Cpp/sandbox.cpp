@@ -16,46 +16,80 @@
 #include "renderer/Renderer.hpp"
 
 std::vector<float> vertices = {
-    0.0f, 0.5f, 0.0f, 0.0f, 0.0f,
-    0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-    0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-    -0.5f, -0.5f, 0.5f, 0.0f, 0.0f
+    //  x      y      z      u     v
+    // Front face
+     0.0f,  0.5f,  0.0f,  0.5f, 1.0f,  // apex
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  // front-right
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  // front-left
+    // Right face
+     0.0f,  0.5f,  0.0f,  0.5f, 1.0f,  // apex
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  // back-right
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  // front-right
+    // Back face
+     0.0f,  0.5f,  0.0f,  0.5f, 1.0f,  // apex
+    -0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  // back-left
+     0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  // back-right
+    // Left face
+     0.0f,  0.5f,  0.0f,  0.5f, 1.0f,  // apex
+    -0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  // front-left
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  // back-left
+    // Bottom face
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  // front-right
+     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,  // back-right
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  // back-left
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  // front-left
 };
 
 std::vector<unsigned int> indices = {
-    0, 1, 4,
-    0, 2, 1,
-    0, 3, 2,
-    0, 4, 3,
-    1, 2, 3,
-    1, 3, 4
+     0,  1,  2,  // Front
+     3,  4,  5,  // Right
+     6,  7,  8,  // Back
+     9, 10, 11,  // Left
+    12, 13, 14,  // Bottom tri 1
+    12, 14, 15,  // Bottom tri 2
 };
 
 std::vector<float> cubeVertices = {
-    -0.5, -0.5, 0.5,
-    0.5, -0.5, 0.5,
-    0.5, -0.5, -0.5,
-    -0.5, -0.5, -0.5,
-    -0.5, 0.5, 0.5,
-    0.5, 0.5, 0.5,
-    0.5, 0.5, -0.5,
-    -0.5, 0.5, -0.5
+    // x      y      z     u     v
+    // Front face
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+    // Back face
+     0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+    // Left face
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+    // Right face
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+    // Bottom face
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 1.0f,
+    // Top face
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
 };
 
-std::vector<unsigned int> cubeIndices {
-    0, 1, 5,
-    0, 4, 5,
-    0, 1, 2,
-    0, 3, 2,
-    0, 4, 7,
-    0, 3, 7, 
-    6, 2, 3,
-    6, 7, 3,
-    6, 5, 1,
-    6, 2, 1,
-    6, 7, 4,
-    6, 5, 4
+std::vector<unsigned int> cubeIndices = {
+     0,  1,  2,   0,  2,  3,   // Front
+     4,  5,  6,   4,  6,  7,   // Back
+     8,  9, 10,   8, 10, 11,   // Left
+    12, 13, 14,  12, 14, 15,   // Right
+    16, 17, 18,  16, 18, 19,   // Bottom
+    20, 21, 22,  20, 22, 23,   // Top
 };
 
 int main(void)
@@ -139,6 +173,24 @@ int main(void)
 
     pyramid2_transform.position.x = 1.5f;
     pyramid2_transform.scale = glm::vec3(0.5f);
+
+    ECS::EntityID cube = ecs.entityCreate();
+
+    auto &cube_mesh = ecs.entityAddComponent<MeshHandleComponent>(cube);
+    auto &cube_transform = ecs.entityAddComponent<TransformComponent>(cube);
+
+    cube_mesh = MeshHandleComponent::Create(cubeVertices, cubeIndices, MeshHandleComponent::Attributes::UV_MAP);
+    // cube_mesh.texture = obama;
+    cube_transform.position = glm::vec3(2.0f, 1.0f, 3.0f);
+
+    ECS::EntityID default_pyramid = ecs.entityCreate();
+
+    auto &d_pyramid_mesh = ecs.entityAddComponent<MeshHandleComponent>(default_pyramid);
+    auto &d_pyramid_transform = ecs.entityAddComponent<TransformComponent>(default_pyramid);
+
+    d_pyramid_mesh = MeshHandleComponent::Create(vertices, indices, MeshHandleComponent::Attributes::UV_MAP);
+    // cube_mesh.texture = obama;
+    d_pyramid_transform.position = glm::vec3(-2.0f, 1.0f, 3.0f);
 
     GLFWInputProvider provider = GLFWInputProvider(window);
     InputState inputs;

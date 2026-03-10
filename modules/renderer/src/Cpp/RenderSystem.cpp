@@ -22,13 +22,13 @@ MeshHandleComponent MeshHandleComponent::Create(
     ;
 
     float cx = 0, cy = 0, cz = 0;
-    for (int i = 0; i < vertices.size(); i += 5) {
+    for (int i = 0; i < vertices.size(); i += vertex_size) {
         cx += vertices[i]; cy += vertices[i+1]; cz += vertices[i+2];
     }
-    int count = vertices.size() / 5;
+    int count = vertices.size() / vertex_size;
     cx /= count; cy /= count; cz /= count;
 
-    for (int i = 0; i < vertices.size(); i += 5) {
+    for (int i = 0; i < vertices.size(); i += vertex_size) {
         vertices[i] -= cx; vertices[i+1] -= cy; vertices[i+2] -= cz;
     }
 
@@ -77,24 +77,24 @@ MeshHandleComponent MeshHandleComponent::loadMesh(const std::string &objPath)
     if (!err.empty())  std::cerr << "OBJ err: "  << err  << std::endl;
     if (shapes.empty()) std::cerr << "OBJ: no shapes loaded from " << objPath << std::endl;
 
-    std::vector<float> verticies;
+    std::vector<float> vertices;
     std::vector<unsigned int> indices;
     unsigned int idx = 0;
 
     for (const auto &shape : shapes) {
         for (const auto &index : shape.mesh.indices) {
-            verticies.push_back(attrib.vertices[3 * index.vertex_index + 0]);
-            verticies.push_back(attrib.vertices[3 * index.vertex_index + 1]);
-            verticies.push_back(attrib.vertices[3 * index.vertex_index + 2]);
+            vertices.push_back(attrib.vertices[3 * index.vertex_index + 0]);
+            vertices.push_back(attrib.vertices[3 * index.vertex_index + 1]);
+            vertices.push_back(attrib.vertices[3 * index.vertex_index + 2]);
 
-            verticies.push_back(attrib.texcoords[2 * index.texcoord_index + 0]);
-            verticies.push_back(1.0f - attrib.texcoords[2 * index.texcoord_index + 1]);
+            vertices.push_back(attrib.texcoords[2 * index.texcoord_index + 0]);
+            vertices.push_back(1.0f - attrib.texcoords[2 * index.texcoord_index + 1]);
 
             indices.push_back(idx++);
         }
     }
 
-    return MeshHandleComponent::Create(verticies, indices, Attributes::UV_MAP);
+    return MeshHandleComponent::Create(vertices, indices, Attributes::UV_MAP);
 }
 
 glm::mat4 CameraComponent::getView(const CameraComponent &cam)
@@ -130,6 +130,7 @@ RenderSystem::RenderSystem(
     m_frag_path(fragShaderPath),
     m_window(window)
 {
+    default_texture = renderer::loadTexture("modules/renderer/default.png");
 }
 
 RenderSystem::~RenderSystem()
@@ -194,14 +195,14 @@ void RenderSystem::Update(ECS::ECS &ecs, ECS::SystemID id, uint32_t ms)
             glUniformMatrix4fv(glGetUniformLocation(shader_prog, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
             
             
-            glUniformMatrix4fv(glad_glGetUniformLocation(shader_prog, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glUniformMatrix4fv(glGetUniformLocation(shader_prog, "model"), 1, GL_FALSE, glm::value_ptr(model));
             
-            glad_glBindVertexArray(mesh.VAO);
+            glBindVertexArray(mesh.VAO);
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, mesh.texture);
-            glUniform1i(glad_glGetUniformLocation(shader_prog, "uTexture"), 0);
+            glBindTexture(GL_TEXTURE_2D, mesh.texture ? mesh.texture : default_texture);
+            glUniform1i(glGetUniformLocation(shader_prog, "uTexture"), 0);
             glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, 0);
-            glad_glBindVertexArray(0);
+            glBindVertexArray(0);
         }
     }
 

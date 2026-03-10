@@ -73,7 +73,23 @@ unsigned int loadTexture(const std::string &textPath)
 
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+    if (!data) {
+        std::cerr << "Failed to load texture: " << textPath << std::endl;
+        glDeleteTextures(1, &tex);
+        return 0;
+    }
+
+    GLenum format = GL_RGB;
+
+    if (channels == 1)
+        format = GL_RED;
+    else if (channels == 3)
+        format = GL_RGB;
+    else if (channels == 4)
+        format = GL_RGBA;
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
     stbi_image_free(data);
 

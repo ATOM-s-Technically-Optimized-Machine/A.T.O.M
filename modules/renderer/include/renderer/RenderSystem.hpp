@@ -70,6 +70,7 @@ class RenderSystem : public ECS::ISystem {
         std::string m_frag_path;
         std::unordered_map<int, unsigned int> m_shader_cache;
         GLFWwindow *m_window;
+        unsigned int default_texture;
 };
 
 #endif /* !RENDER_SYSTEM_HPP_ */
