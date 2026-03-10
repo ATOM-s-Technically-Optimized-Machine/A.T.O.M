@@ -99,12 +99,7 @@ MeshHandleComponent MeshHandleComponent::loadMesh(const std::string &objPath)
 
 glm::mat4 CameraComponent::getView(const CameraComponent &cam)
 {
-    glm::vec3 forward;
-
-    forward.x = cos(glm::radians(cam.yaw)) * cos(glm::radians(cam.pitch));
-    forward.y = sin(glm::radians(cam.pitch));
-    forward.z = sin(glm::radians(cam.yaw)) * cos(glm::radians(cam.pitch));
-    forward = glm::normalize(forward);
+    glm::vec3 forward = CameraComponent::getForward(cam);
 
     return glm::lookAt(cam.position, cam.position + forward, glm::vec3(0.0f, 1.0f, 0.0f));
 }
@@ -112,6 +107,18 @@ glm::mat4 CameraComponent::getView(const CameraComponent &cam)
 glm::mat4 CameraComponent::getProjection(const CameraComponent &cam, float aspectRatio)
 {
     return glm::perspective(glm::radians(cam.fov), aspectRatio, 0.1f, 100.0f);
+}
+
+glm::vec3 CameraComponent::getForward(const CameraComponent &cam)
+{
+    glm::vec3 forward;
+
+    forward.x = cos(glm::radians(cam.yaw)) * cos(glm::radians(cam.pitch));
+    forward.y = sin(glm::radians(cam.pitch));
+    forward.z = sin(glm::radians(cam.yaw)) * cos(glm::radians(cam.pitch));
+    forward = glm::normalize(forward);
+    
+    return forward;
 }
 
 RenderSystem::RenderSystem(

@@ -54,6 +54,7 @@ struct CameraComponent {
 
     static glm::mat4 getView(const CameraComponent &cam);
     static glm::mat4 getProjection(const CameraComponent &cam, float aspectRatio);
+    static glm::vec3 getForward(const CameraComponent &cam);
 };
 
 class RenderSystem : public ECS::ISystem {
