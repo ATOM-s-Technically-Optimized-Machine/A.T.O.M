@@ -27,7 +27,7 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace Resources
+namespace resources
 {
 
 // Alias for uint32_t, used to represent and locate resources within a pool
@@ -68,6 +68,6 @@ class ResourceTypeId
         return id;
     }
 };
-} // namespace Resources
+} // namespace resources
 
 #endif /* !RESOURCE_INCLUDES_HPP_ */

@@ -28,7 +28,7 @@
 
 #include <string>
 
-namespace Resources
+namespace resources
 {
 
 /**
@@ -106,6 +106,6 @@ FontData loadFont(const std::string &path);
  * @param manager The ResourceManager to set up
  */
 void registerDefaultLoaders(ResourceManager &manager);
-} // namespace Resources
+} // namespace resources
 
 #endif /* !RESOURCE_LOADERS_HPP_ */

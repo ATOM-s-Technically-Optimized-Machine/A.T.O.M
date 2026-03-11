@@ -86,9 +86,9 @@ ATOM/
 Then point the `ResourceManager` at the assets directory:
 
 ```cpp
-Resources::ResourceManager manager("resources/");
+resources::ResourceManager manager("resources/");
 // or with an absolute path:
-Resources::ResourceManager manager(projectRoot + "/resources/");
+resources::ResourceManager manager(projectRoot + "/resources/");
 ```
 
 All calls to `load()`, `store()`, `scan()`, etc. will resolve paths relative to that base, e.g. `manager.load<ImageData>("textures/wall.png")` reads `resources/textures/wall.png`.
@@ -128,22 +128,22 @@ This gives you the public include directory (`include/`) automatically.
 
 int main() {
     // 1. Create a manager pointed at your assets folder
-    Resources::ResourceManager manager("resources/");
+    resources::ResourceManager manager("resources/");
 
     // 2. Register ImageData + its loader
-    Resources::registerDefaultLoaders(manager);
+    resources::registerDefaultLoaders(manager);
 
     // 3. Load the texture (returns a cached ID)
-    Resources::ResourceID id = manager.load<Resources::ImageData>("textures/wall.png");
+    resources::ResourceID id = manager.load<resources::ImageData>("textures/wall.png");
 
     // 4. Use it
-    const auto &img = manager.get<Resources::ImageData>(id);
+    const auto &img = manager.get<resources::ImageData>(id);
     std::cout << img.width << "x" << img.height
               << " (" << img.channels << " channels, "
               << img.pixels.size() << " bytes)" << std::endl;
 
     // 5. Release when done
-    manager.release<Resources::ImageData>(id);
+    manager.release<resources::ImageData>(id);
     return 0;
 }
 ```
@@ -154,26 +154,26 @@ int main() {
 #include <resources/ResourceLoaders.hpp>
 
 int main() {
-    Resources::ResourceManager manager("resources/");
+    resources::ResourceManager manager("resources/");
 
     // Register all built-in types + their default loaders in one call
-    Resources::registerDefaultLoaders(manager);
+    resources::registerDefaultLoaders(manager);
 
     // Load resources — returns a cached ID if the path was already loaded
-    Resources::ResourceID texId  = manager.load<Resources::ImageData>("textures/wall.png");
-    Resources::ResourceID meshId = manager.load<Resources::MeshData>("models/cube.obj");
-    Resources::ResourceID sndId  = manager.load<Resources::AudioData>("sounds/click.wav");
+    resources::ResourceID texId  = manager.load<resources::ImageData>("textures/wall.png");
+    resources::ResourceID meshId = manager.load<resources::MeshData>("models/cube.obj");
+    resources::ResourceID sndId  = manager.load<resources::AudioData>("sounds/click.wav");
 
     // Retrieve by ID (O(1))
-    const auto &img = manager.get<Resources::ImageData>(texId);
+    const auto &img = manager.get<resources::ImageData>(texId);
     // img.width, img.height, img.channels, img.pixels ...
 
     // Retrieve by path (hash-map lookup)
-    const auto &mesh = manager.get<Resources::MeshData>("models/cube.obj");
+    const auto &mesh = manager.get<resources::MeshData>("models/cube.obj");
     // mesh.vertices, mesh.indices, mesh.hasNormals ...
 
     // Release when done
-    manager.release<Resources::ImageData>(texId);
+    manager.release<resources::ImageData>(texId);
 
     // Or release everything at once
     manager.releaseAll();
@@ -240,8 +240,8 @@ All errors are thrown as exceptions defined in `ResourceErrors.hpp`:
 
 | Exception | Thrown when |
 |---|---|
-| `ERROR::UnregisteredResource` | Accessing a pool for a type that hasn't been registered. |
-| `ERROR::ResourceNotFound` | Looking up an invalid ID or an unknown path. |
+| `error::UnregisteredResource` | Accessing a pool for a type that hasn't been registered. |
+| `error::ResourceNotFound` | Looking up an invalid ID or an unknown path. |
 
 ## Custom Resource Types
 
@@ -276,7 +276,7 @@ auto id2 = manager.load<LevelData>("levels/world1");
 
 ```cpp
 // Load all PNGs and JPGs from the textures folder (recursively)
-auto ids = manager.scan<Resources::ImageData>("textures/", {".png", ".jpg"}, true);
+auto ids = manager.scan<resources::ImageData>("textures/", {".png", ".jpg"}, true);
 ```
 
 ## License

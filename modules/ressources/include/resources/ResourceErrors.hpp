@@ -27,9 +27,9 @@
 #include <exception>
 #include <string>
 
-namespace Resources
+namespace resources
 {
-namespace ERROR
+namespace error
 {
 
 class UnregisteredResource : public std::exception
@@ -75,7 +75,7 @@ class ResourceNotFound : public std::exception
   private:
     std::string message;
 };
-} // namespace ERROR
-} // namespace Resources
+} // namespace error
+} // namespace resources
 
 #endif /* !RESOURCE_ERRORS_HPP_ */

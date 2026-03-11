@@ -27,7 +27,7 @@
 #include <string>
 #include <vector>
 
-namespace Resources
+namespace resources
 {
 
 /**
@@ -102,6 +102,6 @@ struct FontData
 {
     std::vector<unsigned char> fileBytes; // Raw .ttf / .otf file contents
 };
-} // namespace Resources
+} // namespace resources
 
 #endif /* !RESOURCE_TYPES_HPP_ */

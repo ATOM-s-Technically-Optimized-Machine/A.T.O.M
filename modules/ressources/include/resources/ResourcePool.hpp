@@ -33,7 +33,7 @@
 #include <utility>
 #include <vector>
 
-namespace Resources
+namespace resources
 {
 
 /**
@@ -110,7 +110,7 @@ template <ResourceType T> class ResourcePool : public IResourcePool
      *
      * @param id The resource ID
      * @return T& Reference to the resource data
-     * @throw ERROR::ResourceNotFound => if the ID is invalid or the resource was released
+     * @throw error::ResourceNotFound => if the ID is invalid or the resource was released
      */
     T &get(ResourceID id)
     {
@@ -123,7 +123,7 @@ template <ResourceType T> class ResourcePool : public IResourcePool
      *
      * @param id The resource ID
      * @return const T& Const reference to the resource data
-     * @throw ERROR::ResourceNotFound => if the ID is invalid or the resource was released
+     * @throw error::ResourceNotFound => if the ID is invalid or the resource was released
      */
     const T &get(ResourceID id) const
     {
@@ -136,7 +136,7 @@ template <ResourceType T> class ResourcePool : public IResourcePool
      *
      * @param path The file path or key for the resource
      * @return T& Reference to the resource data
-     * @throw ERROR::ResourceNotFound => if the path is not loaded
+     * @throw error::ResourceNotFound => if the path is not loaded
      */
     T &getByPath(const std::string &path)
     {
@@ -148,7 +148,7 @@ template <ResourceType T> class ResourcePool : public IResourcePool
      *
      * @param path The file path or key for the resource
      * @return const T& Const reference to the resource data
-     * @throw ERROR::ResourceNotFound => if the path is not loaded
+     * @throw error::ResourceNotFound => if the path is not loaded
      */
     const T &getByPath(const std::string &path) const
     {
@@ -160,13 +160,13 @@ template <ResourceType T> class ResourcePool : public IResourcePool
      *
      * @param path The file path or key for the resource
      * @return ResourceID The ID of the resource
-     * @throw ERROR::ResourceNotFound => if the path is not loaded
+     * @throw error::ResourceNotFound => if the path is not loaded
      */
     ResourceID getIdByPath(const std::string &path) const
     {
         auto it = m_path_index.find(path);
         if (it == m_path_index.end())
-            throw ERROR::ResourceNotFound(path);
+            throw error::ResourceNotFound(path);
         return it->second;
     }
 
@@ -271,14 +271,14 @@ template <ResourceType T> class ResourcePool : public IResourcePool
      *
      * @param path The file path to load
      * @return ResourceID The ID of the loaded resource
-     * @throw ERROR::ResourceNotFound => if no loader is registered and the path isn't loaded
+     * @throw error::ResourceNotFound => if no loader is registered and the path isn't loaded
      */
     ResourceID load(const std::string &path)
     {
         if (hasPath(path))
             return getIdByPath(path);
         if (!m_loader)
-            throw ERROR::ResourceNotFound(path);
+            throw error::ResourceNotFound(path);
         return store(path, m_loader(path));
     }
 
@@ -308,14 +308,14 @@ template <ResourceType T> class ResourcePool : public IResourcePool
      * @brief Validates that a resource ID is valid and alive
      *
      * @param id The resource ID to validate
-     * @throw ERROR::ResourceNotFound => if the ID is invalid or released
+     * @throw error::ResourceNotFound => if the ID is invalid or released
      */
     void validateId(ResourceID id) const
     {
         if (!hasId(id))
-            throw ERROR::ResourceNotFound(id);
+            throw error::ResourceNotFound(id);
     }
 };
-} // namespace Resources
+} // namespace resources
 
 #endif /* !RESOURCE_POOL_HPP_ */

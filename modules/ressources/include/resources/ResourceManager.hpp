@@ -33,7 +33,7 @@
 #include <typeinfo>
 #include <vector>
 
-namespace Resources
+namespace resources
 {
 
 /**
@@ -162,7 +162,7 @@ class ResourceManager
      * @param path The file path or key identifying this resource
      * @param data The resource data to store (will be moved)
      * @return ResourceID The assigned or existing ID
-     * @throw ERROR::UnregisteredResource => if the resource type isn't registered
+     * @throw error::UnregisteredResource => if the resource type isn't registered
      */
     template <ResourceType T> ResourceID store(const std::string &path, T &&data)
     {
@@ -175,8 +175,8 @@ class ResourceManager
      * @tparam T The resource type
      * @param id The resource ID
      * @return T& Reference to the resource data
-     * @throw ERROR::UnregisteredResource => if the resource type isn't registered
-     * @throw ERROR::ResourceNotFound => if the ID is invalid or released
+     * @throw error::UnregisteredResource => if the resource type isn't registered
+     * @throw error::ResourceNotFound => if the ID is invalid or released
      */
     template <ResourceType T> T &get(ResourceID id)
     {
@@ -189,8 +189,8 @@ class ResourceManager
      * @tparam T The resource type
      * @param id The resource ID
      * @return const T& Const reference to the resource data
-     * @throw ERROR::UnregisteredResource => if the resource type isn't registered
-     * @throw ERROR::ResourceNotFound => if the ID is invalid or released
+     * @throw error::UnregisteredResource => if the resource type isn't registered
+     * @throw error::ResourceNotFound => if the ID is invalid or released
      */
     template <ResourceType T> const T &get(ResourceID id) const
     {
@@ -203,8 +203,8 @@ class ResourceManager
      * @tparam T The resource type
      * @param path The file path or key for the resource
      * @return T& Reference to the resource data
-     * @throw ERROR::UnregisteredResource => if the resource type isn't registered
-     * @throw ERROR::ResourceNotFound => if the path is not loaded
+     * @throw error::UnregisteredResource => if the resource type isn't registered
+     * @throw error::ResourceNotFound => if the path is not loaded
      */
     template <ResourceType T> T &getByPath(const std::string &path)
     {
@@ -217,8 +217,8 @@ class ResourceManager
      * @tparam T The resource type
      * @param path The file path or key for the resource
      * @return ResourceID The ID of the resource
-     * @throw ERROR::UnregisteredResource => if the resource type isn't registered
-     * @throw ERROR::ResourceNotFound => if the path is not loaded
+     * @throw error::UnregisteredResource => if the resource type isn't registered
+     * @throw error::ResourceNotFound => if the path is not loaded
      */
     template <ResourceType T> ResourceID getIdByPath(const std::string &path)
     {
@@ -243,7 +243,7 @@ class ResourceManager
      *
      * @tparam T The resource type
      * @param id The resource ID to release
-     * @throw ERROR::UnregisteredResource => if the resource type isn't registered
+     * @throw error::UnregisteredResource => if the resource type isn't registered
      */
     template <ResourceType T> void release(ResourceID id)
     {
@@ -255,7 +255,7 @@ class ResourceManager
      *
      * @tparam T The resource type
      * @param path The file path or key of the resource to release
-     * @throw ERROR::UnregisteredResource => if the resource type isn't registered
+     * @throw error::UnregisteredResource => if the resource type isn't registered
      */
     template <ResourceType T> void releaseByPath(const std::string &path)
     {
@@ -280,7 +280,7 @@ class ResourceManager
      *
      * @tparam T The resource type
      * @param loader A function that takes a path and returns T
-     * @throw ERROR::UnregisteredResource => if the resource type isn't registered
+     * @throw error::UnregisteredResource => if the resource type isn't registered
      */
     template <ResourceType T> void setLoader(std::function<T(const std::string &)> loader)
     {
@@ -297,8 +297,8 @@ class ResourceManager
      * @tparam T The resource type
      * @param path The file path to load
      * @return ResourceID The ID of the loaded resource
-     * @throw ERROR::UnregisteredResource => if the resource type isn't registered
-     * @throw ERROR::ResourceNotFound => if no loader is registered and the path isn't loaded
+     * @throw error::UnregisteredResource => if the resource type isn't registered
+     * @throw error::ResourceNotFound => if no loader is registered and the path isn't loaded
      */
     template <ResourceType T> ResourceID load(const std::string &path)
     {
@@ -310,13 +310,13 @@ class ResourceManager
      *
      * @tparam T The resource type
      * @return ResourcePool<T>& Reference to the pool
-     * @throw ERROR::UnregisteredResource => if the resource type isn't registered
+     * @throw error::UnregisteredResource => if the resource type isn't registered
      */
     template <ResourceType T> ResourcePool<T> &pool()
     {
         uint8_t id = ResourceTypeId::get<T>();
         if (id >= m_pools.size() || !m_pools[id])
-            throw ERROR::UnregisteredResource(typeid(T).name());
+            throw error::UnregisteredResource(typeid(T).name());
         return *static_cast<ResourcePool<T> *>(m_pools[id]);
     }
 
@@ -325,13 +325,13 @@ class ResourceManager
      *
      * @tparam T The resource type
      * @return const ResourcePool<T>& Const reference to the pool
-     * @throw ERROR::UnregisteredResource => if the resource type isn't registered
+     * @throw error::UnregisteredResource => if the resource type isn't registered
      */
     template <ResourceType T> const ResourcePool<T> &pool() const
     {
         uint8_t id = ResourceTypeId::get<T>();
         if (id >= m_pools.size() || !m_pools[id])
-            throw ERROR::UnregisteredResource(typeid(T).name());
+            throw error::UnregisteredResource(typeid(T).name());
         return *static_cast<const ResourcePool<T> *>(m_pools[id]);
     }
 
@@ -405,6 +405,6 @@ class ResourceManager
     // Base directory for all resource paths. Empty = no prefix.
     std::string m_base_path;
 };
-} // namespace Resources
+} // namespace resources
 
 #endif /* !RESOURCE_MANAGER_HPP_ */

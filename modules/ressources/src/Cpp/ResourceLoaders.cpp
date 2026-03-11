@@ -32,7 +32,7 @@
 #include <stdexcept>
 #include <unordered_map>
 
-namespace Resources
+namespace resources
 {
 
 ImageData loadImage(const std::string &path)
@@ -244,4 +244,4 @@ void registerDefaultLoaders(ResourceManager &manager)
     manager.setLoader<AudioData>(loadAudio);
     manager.setLoader<FontData>(loadFont);
 }
-} // namespace Resources
+} // namespace resources
