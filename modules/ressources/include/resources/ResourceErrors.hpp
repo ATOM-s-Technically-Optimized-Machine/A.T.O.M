@@ -55,11 +55,13 @@ class UnregisteredResource : public std::exception
 class ResourceNotFound : public std::exception
 {
   public:
-    explicit ResourceNotFound(uint32_t id) : message("Resource ID " + std::to_string(id) + " not found!")
+    explicit ResourceNotFound(uint32_t id)
+        : message("Resource ID " + std::to_string(id) + " not found!")
     {
     }
 
-    explicit ResourceNotFound(const std::string &path) : message("Resource path '" + path + "' not found!")
+    explicit ResourceNotFound(const std::string &path)
+        : message("Resource path '" + path + "' not found!")
     {
     }
 
