@@ -18,52 +18,56 @@
  *  License along with this library; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
  *  USA
-*/
+ */
 
 #ifndef RESOURCE_INCLUDES_HPP_
-    #define RESOURCE_INCLUDES_HPP_
+#define RESOURCE_INCLUDES_HPP_
 
-    #include <type_traits>
-    #include <cstdint>
-    #include <atomic>
+#include <atomic>
+#include <cstdint>
+#include <type_traits>
 
-namespace Resources {
+namespace Resources
+{
 
-    // Alias for uint32_t, used to represent and locate resources within a pool
-    using ResourceID = uint32_t;
+// Alias for uint32_t, used to represent and locate resources within a pool
+using ResourceID = uint32_t;
 
-    // A resource ID of 0 is always invalid — valid IDs start at 1
-    constexpr ResourceID INVALID_RESOURCE = 0;
+// A resource ID of 0 is always invalid — valid IDs start at 1
+constexpr ResourceID INVALID_RESOURCE = 0;
 
-    // Concept for accepting resource types — resources must be movable
-    // (unlike ECS components which are default-constructible, resources
-    //  are built externally with real data and moved into the manager)
-    template<typename T>
-    concept ResourceType = std::is_move_constructible_v<T>;
+// Concept for accepting resource types — resources must be movable
+// (unlike ECS components which are default-constructible, resources
+//  are built externally with real data and moved into the manager)
+template <typename T>
+concept ResourceType = std::is_move_constructible_v<T>;
 
+/**
+ * @brief Class for generating and getting unique type IDs per resource type
+ *
+ * Uses an atomic counter to assign a unique uint8_t ID to each
+ * resource type the first time get<T>() is called.
+ * uint8_t is used instead of uint16_t — you will never have 256 resource types.
+ */
+class ResourceTypeId
+{
+  private:
+    inline static std::atomic<uint8_t> s_counter{0};
+
+  public:
     /**
-     * @brief Class for generating and getting unique type IDs per resource type
+     * @brief Returns the ID attached to this specific type, generates an ID if this is the first
+     * call
      *
-     * Uses an atomic counter to assign a unique uint8_t ID to each
-     * resource type the first time get<T>() is called.
-     * uint8_t is used instead of uint16_t — you will never have 256 resource types.
+     * @tparam T The type to get an ID from
+     * @return uint8_t The corresponding ID
      */
-    class ResourceTypeId {
-        private:
-            inline static std::atomic<uint8_t> s_counter{0};
-        public:
-            /**
-             * @brief Returns the ID attached to this specific type, generates an ID if this is the first call
-             * 
-             * @tparam T The type to get an ID from
-             * @return uint8_t The corresponding ID
-             */
-            template<typename T>
-            static uint8_t get() {
-                static const uint8_t id = s_counter.fetch_add(1, std::memory_order_relaxed);
-                return id;
-            }
-    };
-}
+    template <typename T> static uint8_t get()
+    {
+        static const uint8_t id = s_counter.fetch_add(1, std::memory_order_relaxed);
+        return id;
+    }
+};
+} // namespace Resources
 
 #endif /* !RESOURCE_INCLUDES_HPP_ */

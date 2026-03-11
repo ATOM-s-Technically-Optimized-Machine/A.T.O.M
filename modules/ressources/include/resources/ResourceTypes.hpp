@@ -18,84 +18,90 @@
  *  License along with this library; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
  *  USA
-*/
+ */
 
 #ifndef RESOURCE_TYPES_HPP_
-    #define RESOURCE_TYPES_HPP_
+#define RESOURCE_TYPES_HPP_
 
-#include <vector>
-#include <string>
 #include <cstdint>
+#include <string>
+#include <vector>
 
-namespace Resources {
+namespace Resources
+{
 
-    /**
-     * @brief Raw decoded image data (pixels)
-     *
-     * Stores width, height, channel count and raw pixel bytes.
-     * No GPU state — the renderer uploads this to a GL texture itself.
-     */
-    struct ImageData {
-        int width = 0;
-        int height = 0;
-        int channels = 0;                       // 1 = grayscale, 3 = RGB, 4 = RGBA
-        std::vector<unsigned char> pixels;       // Raw decoded pixel data
-    };
+/**
+ * @brief Raw decoded image data (pixels)
+ *
+ * Stores width, height, channel count and raw pixel bytes.
+ * No GPU state — the renderer uploads this to a GL texture itself.
+ */
+struct ImageData
+{
+    int width = 0;
+    int height = 0;
+    int channels = 0;                  // 1 = grayscale, 3 = RGB, 4 = RGBA
+    std::vector<unsigned char> pixels; // Raw decoded pixel data
+};
 
-    /**
-     * @brief Raw mesh geometry data
-     *
-     * Stores interleaved vertex data and index buffer.
-     * The vertex layout depends on the flags (hasUVs, hasNormals, hasColors).
-     * No VAO/VBO — the renderer creates GPU buffers from this itself.
-     *
-     * Vertex layout (floats per vertex):
-     *  - position:  3 (always present)
-     *  - normals:   3 (if hasNormals)
-     *  - UVs:       2 (if hasUVs)
-     *  - colors:    3 (if hasColors)
-     */
-    struct MeshData {
-        std::vector<float> vertices;             // Interleaved vertex attributes
-        std::vector<unsigned int> indices;        // Index buffer
-        bool hasUVs = false;
-        bool hasNormals = false;
-        bool hasColors = false;
-    };
+/**
+ * @brief Raw mesh geometry data
+ *
+ * Stores interleaved vertex data and index buffer.
+ * The vertex layout depends on the flags (hasUVs, hasNormals, hasColors).
+ * No VAO/VBO — the renderer creates GPU buffers from this itself.
+ *
+ * Vertex layout (floats per vertex):
+ *  - position:  3 (always present)
+ *  - normals:   3 (if hasNormals)
+ *  - UVs:       2 (if hasUVs)
+ *  - colors:    3 (if hasColors)
+ */
+struct MeshData
+{
+    std::vector<float> vertices;       // Interleaved vertex attributes
+    std::vector<unsigned int> indices; // Index buffer
+    bool hasUVs = false;
+    bool hasNormals = false;
+    bool hasColors = false;
+};
 
-    /**
-     * @brief Raw shader source code
-     *
-     * Stores the source strings for vertex and fragment shaders.
-     * No compiled GL program — the renderer compiles and links itself.
-     */
-    struct ShaderData {
-        std::string vertexSource;                // Vertex shader source code
-        std::string fragmentSource;              // Fragment shader source code
-    };
+/**
+ * @brief Raw shader source code
+ *
+ * Stores the source strings for vertex and fragment shaders.
+ * No compiled GL program — the renderer compiles and links itself.
+ */
+struct ShaderData
+{
+    std::string vertexSource;   // Vertex shader source code
+    std::string fragmentSource; // Fragment shader source code
+};
 
-    /**
-     * @brief Raw decoded audio sample data
-     *
-     * Stores sample rate, channel count, and decoded PCM samples as floats.
-     * No audio API buffers — the audio module uploads this itself.
-     */
-    struct AudioData {
-        int sampleRate = 0;
-        int channels = 0;                        // 1 = mono, 2 = stereo
-        std::vector<float> samples;              // Interleaved PCM samples, normalized [-1, 1]
-    };
+/**
+ * @brief Raw decoded audio sample data
+ *
+ * Stores sample rate, channel count, and decoded PCM samples as floats.
+ * No audio API buffers — the audio module uploads this itself.
+ */
+struct AudioData
+{
+    int sampleRate = 0;
+    int channels = 0;           // 1 = mono, 2 = stereo
+    std::vector<float> samples; // Interleaved PCM samples, normalized [-1, 1]
+};
 
-    /**
-     * @brief Raw font data
-     *
-     * Stores the raw font file bytes for use with a font rasterizer
-     * (e.g. stb_truetype, FreeType). No glyph atlas — the text renderer
-     * builds that itself.
-     */
-    struct FontData {
-        std::vector<unsigned char> fileBytes;    // Raw .ttf / .otf file contents
-    };
-}
+/**
+ * @brief Raw font data
+ *
+ * Stores the raw font file bytes for use with a font rasterizer
+ * (e.g. stb_truetype, FreeType). No glyph atlas — the text renderer
+ * builds that itself.
+ */
+struct FontData
+{
+    std::vector<unsigned char> fileBytes; // Raw .ttf / .otf file contents
+};
+} // namespace Resources
 
 #endif /* !RESOURCE_TYPES_HPP_ */

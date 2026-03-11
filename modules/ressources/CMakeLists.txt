@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
-project(atom-resources LANGUAGES CXX C)
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_STANDARD_REQUIRED ON)
+if(NOT CMAKE_PROJECT_NAME)
+    project(atom-resources VERSION 0.1.0 LANGUAGES CXX C)
+    set(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    set(CMAKE_C_STANDARD 11)
+    set(CMAKE_C_STANDARD_REQUIRED ON)
+endif()
 
 add_library(atom-resources STATIC
     src/C/resources.c
