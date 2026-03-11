@@ -18,53 +18,66 @@
  *  License along with this library; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
  *  USA
-*/
+ */
 
 #ifndef RESOURCE_ERRORS_HPP_
-    #define RESOURCE_ERRORS_HPP_
+#define RESOURCE_ERRORS_HPP_
 
+#include <cstdint>
 #include <exception>
 #include <string>
-#include <cstdint>
 
-namespace resources {
-    namespace error {
+namespace resources
+{
+namespace error
+{
 
-        class UnregisteredResource : public std::exception {
-            public:
-                UnregisteredResource(const std::string& typename_str)
-                : message("Resource type '" + typename_str + "' isn't registered!")
-                {}
-                ~UnregisteredResource() {}
-
-                const char *what() const noexcept override
-                {
-                    return message.c_str();
-                }
-            private:
-                std::string message;
-        };
-
-        class ResourceNotFound : public std::exception {
-            public:
-                ResourceNotFound(uint32_t id)
-                : message("Resource ID " + std::to_string(id) + " not found!")
-                {}
-
-                ResourceNotFound(const std::string& path)
-                : message("Resource path '" + path + "' not found!")
-                {}
-
-                ~ResourceNotFound() {}
-
-                const char *what() const noexcept override
-                {
-                    return message.c_str();
-                }
-            private:
-                std::string message;
-        };
+class UnregisteredResource : public std::exception
+{
+  public:
+    explicit UnregisteredResource(const std::string &typename_str)
+        : message("Resource type '" + typename_str + "' isn't registered!")
+    {
     }
-}
+    ~UnregisteredResource()
+    {
+    }
+
+    const char *what() const noexcept override
+    {
+        return message.c_str();
+    }
+
+  private:
+    std::string message;
+};
+
+class ResourceNotFound : public std::exception
+{
+  public:
+    explicit ResourceNotFound(uint32_t id)
+        : message("Resource ID " + std::to_string(id) + " not found!")
+    {
+    }
+
+    explicit ResourceNotFound(const std::string &path)
+        : message("Resource path '" + path + "' not found!")
+    {
+    }
+
+    ~ResourceNotFound()
+    {
+    }
+
+    const char *what() const noexcept override
+    {
+        return message.c_str();
+    }
+
+  private:
+    std::string message;
+};
+} // namespace error
+} // namespace resources
 
 #endif /* !RESOURCE_ERRORS_HPP_ */

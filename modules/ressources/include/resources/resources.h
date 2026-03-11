@@ -18,22 +18,23 @@
  *  License along with this library; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
  *  USA
-*/
+ */
 
 #ifndef RESOURCES_H_
-    #define RESOURCES_H_
+#define RESOURCES_H_
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-/**
- * @brief Placeholder C API function for the resources module
- *
- * @param val An integer value
- * @return int The same value (identity — placeholder)
- */
-int resources_func(int val);
+    /**
+     * @brief Placeholder C API function for the resources module
+     *
+     * @param val An integer value
+     * @return int The same value (identity — placeholder)
+     */
+    int resources_func(int val);
 
 #ifdef __cplusplus
 }
