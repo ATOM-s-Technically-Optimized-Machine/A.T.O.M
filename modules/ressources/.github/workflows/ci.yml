@@ -83,5 +83,6 @@ jobs:
             --suppress=unusedFunction \
             --suppress=unmatchedSuppression \
             --suppress=checkersReport \
+            --suppress=toomanyconfigs \
             --suppress='*:src/vendor/*' \
             -I include/ -I src/vendor/ src/C/ src/Cpp/
