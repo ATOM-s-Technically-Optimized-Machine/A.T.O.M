@@ -1,6 +1,7 @@
 #include "renderer/GLFWInputProvider.hpp"
 #include "renderer/Input.hpp"
 #include <GLFW/glfw3.h>
+#include <utility>
 
 GLFWInputProvider::GLFWInputProvider(GLFWwindow *window)
 : m_window(window)
@@ -17,8 +18,12 @@ void GLFWInputProvider::fetch(InputState &state)
         GLFW_KEY_SPACE,
         GLFW_KEY_LEFT_SHIFT,
         GLFW_KEY_ESCAPE,
+        GLFW_KEY_KP_ADD,
+        GLFW_KEY_KP_SUBTRACT,
+        GLFW_KEY_ENTER
     };
 
+    std::swap(state.keys, state.last_keys);
     for (int i = 0; i < (int)Key::_Count; i++) {
         state.keys[i] = glfwGetKey(m_window, keyMap[i]) == GLFW_PRESS;
     }

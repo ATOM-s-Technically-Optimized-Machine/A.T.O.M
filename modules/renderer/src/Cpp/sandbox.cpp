@@ -195,6 +195,7 @@ int main(void)
     GLFWInputProvider provider = GLFWInputProvider(window);
     InputState inputs;
     float last_time = 0.0f;
+    bool allow_mouse = false;
 
     while (!glfwWindowShouldClose(window)) {
         
@@ -205,8 +206,16 @@ int main(void)
         
         provider.fetch(inputs);
 
-        if (inputs.isPressed(Key::Escape))
-            break;
+        if (inputs.isPressed(Key::Escape)) {
+            if (allow_mouse)
+                break;
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            allow_mouse = true;
+        }
+        if (inputs.isPressed(Key::Enter) && allow_mouse) {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            allow_mouse = false;
+        }
 
         float now = glfwGetTime();
         float dt = now - last_time;
@@ -218,17 +227,23 @@ int main(void)
         
         float speed = 3.0f * dt;
 
-        if (inputs.isPressed(Key::W))           cam_data.position += camera_forward * speed;
-        if (inputs.isPressed(Key::S))           cam_data.position -= camera_forward * speed;
-        if (inputs.isPressed(Key::A))           cam_data.position -= right          * speed;
-        if (inputs.isPressed(Key::D))           cam_data.position += right          * speed;
-        if (inputs.isPressed(Key::Space))       cam_data.position += up             * speed;
-        if (inputs.isPressed(Key::LShift))      cam_data.position -= up             * speed;
+        if (inputs.isDown(Key::W))           cam_data.position += camera_forward * speed;
+        if (inputs.isDown(Key::S))           cam_data.position -= camera_forward * speed;
+        if (inputs.isDown(Key::A))           cam_data.position -= right          * speed;
+        if (inputs.isDown(Key::D))           cam_data.position += right          * speed;
+        if (inputs.isDown(Key::Space))       cam_data.position += up             * speed;
+        if (inputs.isDown(Key::LShift))      cam_data.position -= up             * speed;
+        if (inputs.isDown(Key::PlusSign))    cam_data.fov      += 1                     ;
+        if (inputs.isDown(Key::MinusSign))   cam_data.fov      -= 1                     ;
+
 
         float sensitivity = 0.1f;
-        cam_data.yaw += inputs.mouseDx * sensitivity;
-        cam_data.pitch -= inputs.mouseDy * sensitivity;
-        cam_data.pitch = glm::clamp(cam_data.pitch, -89.0f, 89.0f);
+
+        if (!allow_mouse) {
+            cam_data.yaw += inputs.mouseDx * sensitivity;
+            cam_data.pitch -= inputs.mouseDy * sensitivity;
+            cam_data.pitch = glm::clamp(cam_data.pitch, -89.0f, 89.0f);
+        }
 
         iter++;
     }
