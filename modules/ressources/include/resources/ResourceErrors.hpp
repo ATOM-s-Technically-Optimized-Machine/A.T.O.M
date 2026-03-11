@@ -35,7 +35,7 @@ namespace error
 class UnregisteredResource : public std::exception
 {
   public:
-    UnregisteredResource(const std::string &typename_str)
+    explicit UnregisteredResource(const std::string &typename_str)
         : message("Resource type '" + typename_str + "' isn't registered!")
     {
     }
@@ -55,11 +55,11 @@ class UnregisteredResource : public std::exception
 class ResourceNotFound : public std::exception
 {
   public:
-    ResourceNotFound(uint32_t id) : message("Resource ID " + std::to_string(id) + " not found!")
+    explicit ResourceNotFound(uint32_t id) : message("Resource ID " + std::to_string(id) + " not found!")
     {
     }
 
-    ResourceNotFound(const std::string &path) : message("Resource path '" + path + "' not found!")
+    explicit ResourceNotFound(const std::string &path) : message("Resource path '" + path + "' not found!")
     {
     }
 

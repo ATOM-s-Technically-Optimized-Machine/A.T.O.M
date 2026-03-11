@@ -27,6 +27,7 @@
 #include "ResourcePool.hpp"
 #include "ResourceTypes.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <functional>
 #include <string>
@@ -62,7 +63,7 @@ class ResourceManager
      *
      * @param basePath The root directory for resources (e.g. "assets/" or "resources/")
      */
-    ResourceManager(const std::string &basePath) : m_base_path(basePath)
+    explicit ResourceManager(const std::string &basePath) : m_base_path(basePath)
     {
         // Ensure trailing separator
         if (!m_base_path.empty() && m_base_path.back() != '/')
@@ -361,12 +362,8 @@ class ResourceManager
         auto matchesExtension = [&extensions](const std::filesystem::path &p)
         {
             std::string ext = p.extension().string();
-            for (const auto &e : extensions)
-            {
-                if (ext == e)
-                    return true;
-            }
-            return false;
+            return std::any_of(extensions.begin(), extensions.end(),
+                               [&ext](const std::string &e) { return ext == e; });
         };
 
         if (recursive)
