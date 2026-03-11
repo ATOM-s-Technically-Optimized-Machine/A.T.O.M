@@ -47,7 +47,7 @@ ImageData loadImage(const std::string &path)
     img.width = w;
     img.height = h;
     img.channels = ch;
-    img.pixels.assign(pixels, pixels + (w * h * ch));
+    img.pixels.assign(pixels, pixels + static_cast<ptrdiff_t>(w) * h * ch);
     stbi_image_free(pixels);
     return img;
 }

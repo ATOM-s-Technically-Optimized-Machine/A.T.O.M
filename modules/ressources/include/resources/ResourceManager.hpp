@@ -166,7 +166,7 @@ class ResourceManager
      */
     template <ResourceType T> ResourceID store(const std::string &path, T &&data)
     {
-        return pool<T>().store(resolvePath(path), std::move(data));
+        return pool<T>().store(resolvePath(path), std::forward<T>(data));
     }
 
     /**
