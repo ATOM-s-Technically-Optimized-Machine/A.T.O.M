@@ -32,7 +32,7 @@
 #include <functional>
 #include <utility>
 
-namespace Resources {
+namespace resources {
 
     /**
      * @brief ResourcePool interface, used for type-erased storage in ResourceManager
@@ -99,7 +99,7 @@ namespace Resources {
              * 
              * @param id The resource ID
              * @return T& Reference to the resource data
-             * @throw ERROR::ResourceNotFound => if the ID is invalid or the resource was released
+             * @throw error::ResourceNotFound => if the ID is invalid or the resource was released
              */
             T &get(ResourceID id) {
                 validateId(id);
@@ -111,7 +111,7 @@ namespace Resources {
              * 
              * @param id The resource ID
              * @return const T& Const reference to the resource data
-             * @throw ERROR::ResourceNotFound => if the ID is invalid or the resource was released
+             * @throw error::ResourceNotFound => if the ID is invalid or the resource was released
              */
             const T &get(ResourceID id) const {
                 validateId(id);
@@ -123,7 +123,7 @@ namespace Resources {
              * 
              * @param path The file path or key for the resource
              * @return T& Reference to the resource data
-             * @throw ERROR::ResourceNotFound => if the path is not loaded
+             * @throw error::ResourceNotFound => if the path is not loaded
              */
             T &getByPath(const std::string &path) {
                 return get(getIdByPath(path));
@@ -134,7 +134,7 @@ namespace Resources {
              * 
              * @param path The file path or key for the resource
              * @return const T& Const reference to the resource data
-             * @throw ERROR::ResourceNotFound => if the path is not loaded
+             * @throw error::ResourceNotFound => if the path is not loaded
              */
             const T &getByPath(const std::string &path) const {
                 return get(getIdByPath(path));
@@ -145,12 +145,12 @@ namespace Resources {
              * 
              * @param path The file path or key for the resource
              * @return ResourceID The ID of the resource
-             * @throw ERROR::ResourceNotFound => if the path is not loaded
+             * @throw error::ResourceNotFound => if the path is not loaded
              */
             ResourceID getIdByPath(const std::string &path) const {
                 auto it = m_path_index.find(path);
                 if (it == m_path_index.end())
-                    throw ERROR::ResourceNotFound(path);
+                    throw error::ResourceNotFound(path);
                 return it->second;
             }
 
@@ -249,13 +249,13 @@ namespace Resources {
              * 
              * @param path The file path to load
              * @return ResourceID The ID of the loaded resource
-             * @throw ERROR::ResourceNotFound => if no loader is registered and the path isn't loaded
+             * @throw error::ResourceNotFound => if no loader is registered and the path isn't loaded
              */
             ResourceID load(const std::string &path) {
                 if (hasPath(path))
                     return getIdByPath(path);
                 if (!m_loader)
-                    throw ERROR::ResourceNotFound(path);
+                    throw error::ResourceNotFound(path);
                 return store(path, m_loader(path));
             }
 
@@ -284,11 +284,11 @@ namespace Resources {
              * @brief Validates that a resource ID is valid and alive
              * 
              * @param id The resource ID to validate
-             * @throw ERROR::ResourceNotFound => if the ID is invalid or released
+             * @throw error::ResourceNotFound => if the ID is invalid or released
              */
             void validateId(ResourceID id) const {
                 if (!hasId(id))
-                    throw ERROR::ResourceNotFound(id);
+                    throw error::ResourceNotFound(id);
             }
     };
 }

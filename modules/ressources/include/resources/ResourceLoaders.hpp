@@ -28,7 +28,7 @@
 
 #include <string>
 
-namespace Resources {
+namespace resources {
 
     /**
      * @brief Default loader for ImageData

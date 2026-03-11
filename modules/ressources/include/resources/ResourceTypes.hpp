@@ -27,7 +27,7 @@
 #include <string>
 #include <cstdint>
 
-namespace Resources {
+namespace resources {
 
     /**
      * @brief Raw decoded image data (pixels)

@@ -27,7 +27,7 @@
     #include <cstdint>
     #include <atomic>
 
-namespace Resources {
+namespace resources {
 
     // Alias for uint32_t, used to represent and locate resources within a pool
     using ResourceID = uint32_t;

@@ -32,7 +32,7 @@
 #include "tiny_obj_loader.h"
 #include "dr_wav.h"
 
-namespace Resources {
+namespace resources {
 
     ImageData loadImage(const std::string &path) {
         int w, h, ch;

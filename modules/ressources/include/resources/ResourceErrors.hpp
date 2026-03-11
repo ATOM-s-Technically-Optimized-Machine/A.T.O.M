@@ -27,8 +27,8 @@
 #include <string>
 #include <cstdint>
 
-namespace Resources {
-    namespace ERROR {
+namespace resources {
+    namespace error {
 
         class UnregisteredResource : public std::exception {
             public:
