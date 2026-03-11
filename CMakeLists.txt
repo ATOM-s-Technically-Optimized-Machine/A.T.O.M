@@ -11,12 +11,22 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-add_subdirectory(modules/core)
-add_subdirectory(modules/audio)
-add_subdirectory(modules/inputs)
-add_subdirectory(modules/network)
-add_subdirectory(modules/physics)
-add_subdirectory(modules/renderer)
-add_subdirectory(modules/ressources)
-add_subdirectory(modules/script)
-add_subdirectory(modules/tools)
+set(ATOM_MODULES
+    core
+    audio
+    inputs
+    network
+    physics
+    renderer
+    ressources
+    script
+    tools
+)
+
+foreach(mod IN LISTS ATOM_MODULES)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/modules/${mod}/CMakeLists.txt")
+        add_subdirectory("modules/${mod}")
+    else()
+        message(STATUS "Skipping module '${mod}' — no CMakeLists.txt")
+    endif()
+endforeach()
