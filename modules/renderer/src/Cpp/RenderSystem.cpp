@@ -9,27 +9,30 @@
 #include <iostream>
 
 MeshHandleComponent MeshHandleComponent::Create(
-    std::vector<float> &vertices,
-    std::vector<unsigned int> &indices,
-    Attributes attrib
+    const std::vector<float> &vertices,
+    const std::vector<unsigned int> &indices,
+    AttributesMask attrib
 )
 {
     MeshHandleComponent meshHandle;
     unsigned int vertex_size =
-            3   // 3D space
-        +   2 * !!(Attributes::UV_MAP & attrib)
-        +   3 * !!(Attributes::COLORED & attrib)
+            3   // 3D space (always present)
+        +   3 * !!(Attributes::HAS_NORMALS & attrib)    // If has normals
+        +   2 * !!(Attributes::HAS_UV & attrib)     // If has a UV map
+        +   3 * !!(Attributes::HAS_COLORS & attrib)    // If has colors
     ;
 
+    std::vector<float> vertices_copy(vertices);
+
     float cx = 0, cy = 0, cz = 0;
-    for (int i = 0; i < vertices.size(); i += vertex_size) {
-        cx += vertices[i]; cy += vertices[i+1]; cz += vertices[i+2];
+    for (int i = 0; i < vertices_copy.size(); i += vertex_size) {
+        cx += vertices_copy[i]; cy += vertices_copy[i+1]; cz += vertices_copy[i+2];
     }
-    int count = vertices.size() / vertex_size;
+    int count = vertices_copy.size() / vertex_size;
     cx /= count; cy /= count; cz /= count;
 
-    for (int i = 0; i < vertices.size(); i += vertex_size) {
-        vertices[i] -= cx; vertices[i+1] -= cy; vertices[i+2] -= cz;
+    for (int i = 0; i < vertices_copy.size(); i += vertex_size) {
+        vertices_copy[i] -= cx; vertices_copy[i+1] -= cy; vertices_copy[i+2] -= cz;
     }
 
     glGenVertexArrays(1, &meshHandle.VAO);
@@ -39,18 +42,28 @@ MeshHandleComponent MeshHandleComponent::Create(
     glBindVertexArray(meshHandle.VAO);
     
     glBindBuffer(GL_ARRAY_BUFFER, meshHandle.VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices_copy.size() * sizeof(float), vertices_copy.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertex_size * sizeof(float), NULL);
     glEnableVertexAttribArray(0);
 
-    if (Attributes::COLORED & attrib) {
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vertex_size * sizeof(float), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
-    }
+    unsigned int offset = 3;
 
-    if (Attributes::UV_MAP & attrib) {
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, vertex_size * sizeof(float), (void*)((3 + 3 * (!!(Attributes::COLORED & attrib))) * sizeof(float)));
+    if (Attributes::HAS_NORMALS & attrib) {
+        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, vertex_size * sizeof(float), (void*)(offset * sizeof(float)));
+        glEnableVertexAttribArray(3);
+        offset += 3;
+    }
+    
+    if (Attributes::HAS_UV & attrib) {
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, vertex_size * sizeof(float), (void*)(offset * sizeof(float)));
         glEnableVertexAttribArray(2);
+        offset += 2;
+    }
+    
+    if (Attributes::HAS_COLORS & attrib) {
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vertex_size * sizeof(float), (void*)(offset * sizeof(float)));
+        glEnableVertexAttribArray(1);
+        offset += 3;
     }
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshHandle.EBO);
@@ -94,7 +107,18 @@ MeshHandleComponent MeshHandleComponent::loadMesh(const std::string &objPath)
         }
     }
 
-    return MeshHandleComponent::Create(vertices, indices, Attributes::UV_MAP);
+    return MeshHandleComponent::Create(vertices, indices, Attributes::HAS_UV);
+}
+
+MeshHandleComponent MeshHandleComponent::fromMeshData(const resources::MeshData &data)
+{
+    MeshHandleComponent::AttributesMask attribs = MeshHandleComponent::Attributes::NONE;
+
+    attribs |= data.hasNormals ? MeshHandleComponent::Attributes::HAS_NORMALS : 0;
+    attribs |= data.hasColors ? MeshHandleComponent::Attributes::HAS_COLORS : 0;
+    attribs |= data.hasUVs ? MeshHandleComponent::Attributes::HAS_UV : 0;
+
+    return MeshHandleComponent::Create(data.vertices, data.indices, attribs);
 }
 
 glm::mat4 CameraComponent::getView(const CameraComponent &cam)
@@ -140,14 +164,15 @@ RenderSystem::~RenderSystem()
     }
 }
 
-unsigned int RenderSystem::getShader(MeshHandleComponent::Attributes attrib)
+unsigned int RenderSystem::getShader(MeshHandleComponent::AttributesMask attrib)
 {
     if (m_shader_cache.count(attrib))
         return m_shader_cache[attrib];
 
     std::string defines = "";
-    if (attrib & MeshHandleComponent::Attributes::UV_MAP) defines += "#define HAS_UV\n";
-    if (attrib & MeshHandleComponent::Attributes::COLORED) defines += "#define HAS_COLOR\n";
+    if (attrib & MeshHandleComponent::Attributes::HAS_UV) defines += "#define HAS_UV\n";
+    if (attrib & MeshHandleComponent::Attributes::HAS_COLORS) defines += "#define HAS_COLOR\n";
+    if (attrib & MeshHandleComponent::Attributes::HAS_NORMALS) defines += "#define HAS_NORMALS\n";
 
     unsigned int prog = renderer::loadShaderProgram(m_vert_path, m_frag_path, defines);
     m_shader_cache[attrib] = prog;

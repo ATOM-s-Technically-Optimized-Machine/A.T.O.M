@@ -4,32 +4,37 @@
     #include "core/ECS/ECS.hpp"
     #include "core/ECS/Includes.hpp"
     #include "core/ECS/System.hpp"
+    #include "resources/ResourceTypes.hpp"
     #include <GLFW/glfw3.h>
     #include <glm/gtc/quaternion.hpp>
     #include <glm/glm.hpp>
     #include <unordered_map>
 
 struct MeshHandleComponent {
+    using AttributesMask = unsigned char;
+
     enum Attributes {
-        NONE        =   0       ,
-        COLORED     =   1u << 1 ,
-        UV_MAP      =   1u << 2
+        NONE =           0,
+        HAS_UV =         1u << 1,
+        HAS_NORMALS =    1u << 2,
+        HAS_COLORS =     1u << 3,
     };
 
     unsigned int VAO, VBO, EBO;
     unsigned int indexCount;
     unsigned int texture;
 
-    Attributes attributes;
-
+    AttributesMask attributes;
 
     static MeshHandleComponent Create(
-        std::vector<float> &vertices,
-        std::vector<unsigned int> &indices,
-        Attributes attrib = Attributes::NONE
+        const std::vector<float> &vertices,
+        const std::vector<unsigned int> &indices,
+        AttributesMask attrib = Attributes::NONE
     );
 
+    [[deprecated("Use resources::loadMesh instead")]]
     static MeshHandleComponent loadMesh(const std::string &objPath);
+    static MeshHandleComponent fromMeshData(const resources::MeshData &data);
 };
 
 struct TransformComponent {
@@ -62,7 +67,7 @@ class RenderSystem : public ECS::ISystem {
         RenderSystem(const std::string &vertShaderPath, const std::string &fragShaderPath, GLFWwindow *window);
         ~RenderSystem();
 
-        unsigned int getShader(MeshHandleComponent::Attributes attrib);
+        unsigned int getShader(MeshHandleComponent::AttributesMask attrib);
 
         void Update(ECS::ECS &ecs, ECS::SystemID id, uint32_t ms) override;
     private:
