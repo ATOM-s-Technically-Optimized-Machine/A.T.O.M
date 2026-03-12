@@ -160,7 +160,7 @@ void FPSCamera::rotate(Camera &camera, float deltaPitchRad, float deltaYawRad)
     float newYaw = camera.yaw() + deltaYawRad;
 
     // Wrap yaw to [-pi, pi].
-    const float pi = glm::pi<float>();
+    const auto pi = glm::pi<float>();
     newYaw = std::fmod(newYaw + pi, 2.0f * pi);
     if (newYaw < 0.0f)
     {

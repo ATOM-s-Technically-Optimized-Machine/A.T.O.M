@@ -99,8 +99,8 @@ void InputState::processEvent(const Event &event)
         {
             m_buttons[idx] = true;
         }
-        m_mousePos.x = event.mouseButton.x;
-        m_mousePos.y = event.mouseButton.y;
+        m_mousePos.x = static_cast<float>(event.mouseButton.x);
+        m_mousePos.y = static_cast<float>(event.mouseButton.y);
         break;
     }
 
@@ -111,17 +111,17 @@ void InputState::processEvent(const Event &event)
         {
             m_buttons[idx] = false;
         }
-        m_mousePos.x = event.mouseButton.x;
-        m_mousePos.y = event.mouseButton.y;
+        m_mousePos.x = static_cast<float>(event.mouseButton.x);
+        m_mousePos.y = static_cast<float>(event.mouseButton.y);
         break;
     }
 
     case EventType::MouseMove:
     {
-        m_mouseDelta.x += event.mouseMove.deltaX;
-        m_mouseDelta.y += event.mouseMove.deltaY;
-        m_mousePos.x = event.mouseMove.x;
-        m_mousePos.y = event.mouseMove.y;
+        m_mouseDelta.x += static_cast<float>(event.mouseMove.deltaX);
+        m_mouseDelta.y += static_cast<float>(event.mouseMove.deltaY);
+        m_mousePos.x = static_cast<float>(event.mouseMove.x);
+        m_mousePos.y = static_cast<float>(event.mouseMove.y);
         break;
     }
 
@@ -235,11 +235,17 @@ KeyState InputState::getKeyState(KeyCode key) const noexcept
     bool prev = m_keysPrev[idx];
 
     if (curr && !prev)
+    {
         return KeyState::Pressed;
+    }
     if (curr && prev)
+    {
         return KeyState::Held;
+    }
     if (!curr && prev)
+    {
         return KeyState::Released;
+    }
     return KeyState::Up;
 }
 
@@ -367,13 +373,21 @@ glm::vec3 InputState::getMovementVector() const noexcept
     float z = 0.0f;
 
     if (isKeyDown(KeyCode::W))
+    {
         z += 1.0f;
+    }
     if (isKeyDown(KeyCode::S))
+    {
         z -= 1.0f;
+    }
     if (isKeyDown(KeyCode::A))
+    {
         x -= 1.0f;
+    }
     if (isKeyDown(KeyCode::D))
+    {
         x += 1.0f;
+    }
 
     glm::vec3 dir{x, 0.0f, z};
     float len = glm::length(dir);
@@ -388,9 +402,13 @@ float InputState::getVerticalMovement() const noexcept
 {
     float y = 0.0f;
     if (isKeyDown(KeyCode::Space))
+    {
         y += 1.0f;
+    }
     if (isKeyDown(KeyCode::LCtrl))
+    {
         y -= 1.0f;
+    }
     return y;
 }
 
