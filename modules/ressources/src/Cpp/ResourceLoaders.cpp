@@ -138,7 +138,7 @@ MeshData loadMesh(const std::string &path)
                 if (mesh.hasUVs && index.texcoord_index >= 0)
                 {
                     mesh.vertices.push_back(attrib.texcoords[2 * index.texcoord_index + 0]);
-                    mesh.vertices.push_back(attrib.texcoords[2 * index.texcoord_index + 1]);
+                    mesh.vertices.push_back(1.0f - attrib.texcoords[2 * index.texcoord_index + 1]);
                 }
                 else if (mesh.hasUVs)
                 {
