@@ -64,7 +64,7 @@ struct CameraComponent {
 
 class RenderSystem : public ECS::ISystem {
     public:
-        RenderSystem(const std::string &vertShaderPath, const std::string &fragShaderPath, GLFWwindow *window);
+        RenderSystem(const std::string &vertShaderPath, const std::string &fragShaderPath, GLFWwindow *window, const resources::ImageData &defaultTexture);
         ~RenderSystem();
 
         unsigned int getShader(MeshHandleComponent::AttributesMask attrib);

@@ -3,6 +3,8 @@
 #include "renderer/glad/glad.h"
 #include "renderer/RenderSystem.hpp"
 #include "core/ECS/Includes.hpp"
+#include "resources/ResourceIncludes.hpp"
+#include "resources/ResourceTypes.hpp"
 #include <GLFW/glfw3.h>
 #include <glm/ext/quaternion_geometric.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -148,13 +150,14 @@ glm::vec3 CameraComponent::getForward(const CameraComponent &cam)
 RenderSystem::RenderSystem(
     const std::string &vertShaderPath,
     const std::string &fragShaderPath,
-    GLFWwindow *window
+    GLFWwindow *window,
+    const resources::ImageData &defaultTexture
 ) :
     m_vert_path(vertShaderPath),
     m_frag_path(fragShaderPath),
     m_window(window)
 {
-    default_texture = renderer::loadTexture("modules/renderer/default.png");
+    default_texture = renderer::loadTextureFromImageData(defaultTexture);
 }
 
 RenderSystem::~RenderSystem()

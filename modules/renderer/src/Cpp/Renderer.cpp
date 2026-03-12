@@ -1,6 +1,7 @@
 #include <renderer/glad/glad.h>
 #include "renderer/Renderer.hpp"
 #include "renderer/stb_image.h"
+#include "resources/ResourceTypes.hpp"
 #include <fstream>
 #include <iterator>
 #include <iostream>
@@ -63,6 +64,28 @@ unsigned int loadShaderProgram(
     glDeleteShader(fragmentShader);
 
     return shaderProgram;
+}
+
+unsigned int loadTextureFromImageData(const resources::ImageData &data)
+{
+    unsigned int tex;
+
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+
+    GLenum format = GL_RGB;
+
+    if (data.channels == 1)
+        format = GL_RED;
+    else if (data.channels == 3)
+        format = GL_RGB;
+    else if (data.channels == 4)
+        format = GL_RGBA;
+
+    glTexImage2D(GL_TEXTURE_2D, 0, format, data.width, data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, data.pixels.data());
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    return tex;
 }
 
 unsigned int loadTexture(const std::string &textPath)
