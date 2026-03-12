@@ -26,6 +26,9 @@ jobs:
           submodules: recursive
 
       - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "~3.31.0"
+          ninjaVersion: "^1.12.1"
 
       - name: Cache build
         uses: actions/cache@v4
@@ -54,11 +57,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: clang-format check
+      - name: clang-format check (C++ sources)
         uses: jidicula/clang-format-action@v4.14.0
         with:
           clang-format-version: '17'
-          check-path: 'src'
+          check-path: 'src/Cpp'
 
       - name: clang-format check (headers)
         uses: jidicula/clang-format-action@v4.14.0
@@ -67,18 +70,20 @@ jobs:
           check-path: 'include'
 
       - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "~3.31.0"
+          ninjaVersion: "^1.12.1"
 
       - name: Configure for analysis
         run: >
           cmake -B build -G Ninja
           -DCMAKE_BUILD_TYPE=Debug
           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-          -DATOM_INPUTS_BUILD_TESTS=ON
 
       - name: clang-tidy
         run: |
           sudo apt-get install -y clang-tidy
-          run-clang-tidy -p build -header-filter='include/inputs/.*' src/C/
+          run-clang-tidy -p build -header-filter='include/inputs/.*' src/Cpp/
 
       - name: cppcheck
         run: |
@@ -86,7 +91,9 @@ jobs:
           cppcheck --enable=all --error-exitcode=1 \
             --suppress=missingIncludeSystem \
             --suppress=unusedFunction \
-            -I include/ src/C/
+            --suppress=unmatchedSuppression \
+            --suppress=checkersReport \
+            -I include/ src/Cpp/
 
   # ── Sanitizers (ASan + UBSan) ─────────────────────────────────────────────
   sanitizers:
@@ -94,12 +101,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "~3.31.0"
+          ninjaVersion: "^1.12.1"
 
       - name: Configure with sanitizers
         run: >
           cmake -B build -G Ninja
           -DCMAKE_BUILD_TYPE=Debug
-          -DCMAKE_C_COMPILER=gcc
+          -DCMAKE_CXX_COMPILER=g++
           -DATOM_INPUTS_BUILD_TESTS=ON
           -DATOM_INPUTS_ENABLE_ASAN=ON
           -DATOM_INPUTS_ENABLE_UBSAN=ON
@@ -119,6 +129,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "~3.31.0"
+          ninjaVersion: "^1.12.1"
 
       - name: Install lcov
         run: sudo apt-get install -y lcov
@@ -127,7 +140,7 @@ jobs:
         run: >
           cmake -B build -G Ninja
           -DCMAKE_BUILD_TYPE=Debug
-          -DCMAKE_C_COMPILER=gcc
+          -DCMAKE_CXX_COMPILER=g++
           -DATOM_INPUTS_BUILD_TESTS=ON
           -DATOM_INPUTS_ENABLE_COVERAGE=ON
 

@@ -1,11 +1,12 @@
+# Tests for atom-inputs (C++)
+
 set(TEST_SOURCES
-    test_math.c
-    test_event.c
-    test_input_state.c
-    test_camera.c
+    TestEvent.cpp
+    TestInputState.cpp
+    TestCamera.cpp
 )
 
-foreach(test_src ${TEST_SOURCES})
+foreach(test_src IN LISTS TEST_SOURCES)
     get_filename_component(test_name ${test_src} NAME_WE)
     add_executable(${test_name} ${test_src})
     target_link_libraries(${test_name} PRIVATE atom-inputs)

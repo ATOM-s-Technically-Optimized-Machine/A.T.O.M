@@ -5,10 +5,11 @@ Checks: >
   clang-analyzer-*,
   performance-*,
   portability-*,
+  modernize-*,
+  readability-*,
   -bugprone-easily-swappable-parameters,
-  -cert-dcl37-c,
-  -cert-dcl51-cpp,
-  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling
+  -modernize-use-trailing-return-type,
+  -readability-magic-numbers
 
 HeaderFilterRegex: 'include/inputs/.*'
 WarningsAsErrors: '*'
