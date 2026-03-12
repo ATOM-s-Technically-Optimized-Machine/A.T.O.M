@@ -19,13 +19,8 @@ target_sources(atom-renderer PRIVATE
 
 target_link_libraries(atom-renderer PUBLIC
     atom-core
+    atom-resources
     OpenGL::GL
     glfw
     glm::glm
 )
-
-# --- Sandbox executable (dev/test only) ---
-if(ATOM_RENDERER_SANDBOX)
-    add_executable(atom-renderer-sandbox src/Cpp/sandbox.cpp)
-    target_link_libraries(atom-renderer-sandbox PRIVATE atom-renderer)
-endif()
