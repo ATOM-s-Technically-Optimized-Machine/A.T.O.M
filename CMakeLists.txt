@@ -11,6 +11,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+option(ATOM_BUILD_DEMOS "Build project-wide demo" OFF)
+
 add_subdirectory(modules/core)
 add_subdirectory(modules/audio)
 add_subdirectory(modules/inputs)
@@ -20,3 +22,7 @@ add_subdirectory(modules/renderer)
 add_subdirectory(modules/ressources)
 add_subdirectory(modules/script)
 add_subdirectory(modules/tools)
+
+if(ATOM_BUILD_DEMOS)
+    add_subdirectory(demo)
+endif()
