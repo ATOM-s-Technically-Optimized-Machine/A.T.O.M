@@ -37,12 +37,12 @@ FetchContent_MakeAvailable(glm glfw)
 # ---- Modules ----
 set(ATOM_MODULES
     core
+    ressources
     audio
     inputs
     network
     physics
     renderer
-    ressources
     script
     tools
 )
