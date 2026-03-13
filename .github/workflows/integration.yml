@@ -19,6 +19,11 @@ jobs:
 
       - uses: lukka/get-cmake@latest
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libglfw3-dev xorg-dev
+
       - name: Update submodule to latest
         run: |
           MODULE_PATH="${{ github.event.client_payload.module_path }}"
