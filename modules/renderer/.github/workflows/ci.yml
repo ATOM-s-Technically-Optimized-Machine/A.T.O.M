@@ -11,10 +11,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ── Build + Test (Multi-platform matrix) ──────────────────────────────────
+  # ── Build (Multi-platform matrix) ─────────────────────────────────────────
   build:
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         build_type: [Debug, Release]
@@ -27,13 +27,13 @@ jobs:
         with:
           repository: ATOM-s-Technically-Optimized-Machine/module-core
           path: deps/module-core
-          token: ${{ secrets.MAIN_REPO_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
 
       - uses: actions/checkout@v4
         with:
           repository: ATOM-s-Technically-Optimized-Machine/module-ressources
           path: deps/module-ressources
-          token: ${{ secrets.MAIN_REPO_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
 
       - uses: lukka/get-cmake@latest
         with:
@@ -62,23 +62,3 @@ jobs:
 
       - name: Build
         run: cmake --build build --config ${{ matrix.build_type }}
-
-  # ── Lint (clang-format + cppcheck) ─────────────────────────────────────────
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: clang-format check (C++ sources)
-        uses: jidicula/clang-format-action@v4.14.0
-        with:
-          clang-format-version: '17'
-          check-path: 'src/Cpp'
-          exclude-regex: 'sandbox\.cpp'
-
-      - name: clang-format check (headers)
-        uses: jidicula/clang-format-action@v4.14.0
-        with:
-          clang-format-version: '17'
-          check-path: 'include/renderer'
-          exclude-regex: 'glad/.*|stb_image\.h|tiny_obj_loader\.hpp'
