@@ -43,6 +43,14 @@ if(NOT glm_FOUND)
     FetchContent_MakeAvailable(glm)
 endif()
 
+# ---- Dependencies: atom-core and atom-resources (for standalone CI builds) ----
+if(NOT TARGET atom-core AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/module-core/CMakeLists.txt")
+    add_subdirectory(deps/module-core)
+endif()
+if(NOT TARGET atom-resources AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/module-ressources/CMakeLists.txt")
+    add_subdirectory(deps/module-ressources)
+endif()
+
 # ---- Library ----
 add_library(atom-renderer)
 

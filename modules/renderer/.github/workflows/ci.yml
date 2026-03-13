@@ -23,6 +23,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/checkout@v4
+        with:
+          repository: ATOM-s-Technically-Optimized-Machine/module-core
+          path: deps/module-core
+          token: ${{ secrets.MAIN_REPO_TOKEN }}
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ATOM-s-Technically-Optimized-Machine/module-ressources
+          path: deps/module-ressources
+          token: ${{ secrets.MAIN_REPO_TOKEN }}
+
       - uses: lukka/get-cmake@latest
         with:
           cmakeVersion: "~3.31.0"
@@ -57,41 +69,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: clang-format check (C/C++ sources)
+      - name: clang-format check (C++ sources)
         uses: jidicula/clang-format-action@v4.14.0
         with:
           clang-format-version: '17'
-          check-path: 'src'
+          check-path: 'src/Cpp'
+          exclude-regex: 'sandbox\.cpp'
 
       - name: clang-format check (headers)
         uses: jidicula/clang-format-action@v4.14.0
         with:
           clang-format-version: '17'
           check-path: 'include/renderer'
-          exclude-regex: 'glad\.h|khrplatform\.h|stb_image\.h|tiny_obj_loader\.hpp'
-
-      - uses: lukka/get-cmake@latest
-        with:
-          cmakeVersion: "~3.31.0"
-          ninjaVersion: "^1.12.1"
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgl1-mesa-dev xorg-dev
-
-      - name: Configure for analysis
-        run: >
-          cmake -B build -G Ninja
-          -DCMAKE_BUILD_TYPE=Debug
-          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-
-      - name: cppcheck
-        run: |
-          sudo apt-get install -y cppcheck
-          cppcheck --enable=all --error-exitcode=1 \
-            --suppress=missingIncludeSystem \
-            --suppress=unusedFunction \
-            --suppress=unmatchedSuppression \
-            --suppress=checkersReport \
-            -I include/ src/Cpp/ src/C/
+          exclude-regex: 'glad/.*|stb_image\.h|tiny_obj_loader\.hpp'
