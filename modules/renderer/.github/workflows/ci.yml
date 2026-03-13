@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Build (Multi-platform matrix) ─────────────────────────────────────────
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        build_type: [Debug, Release]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ATOM-s-Technically-Optimized-Machine/module-core
+          path: deps/module-core
+          token: ${{ secrets.MAIN_REPO_TOKEN }}
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ATOM-s-Technically-Optimized-Machine/module-ressources
+          path: deps/module-ressources
+          token: ${{ secrets.MAIN_REPO_TOKEN }}
+
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "~3.31.0"
+          ninjaVersion: "^1.12.1"
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev xorg-dev libwayland-dev wayland-protocols libxkbcommon-dev
+
+      - name: Cache build
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: v2-${{ runner.os }}-${{ matrix.build_type }}-${{ hashFiles('CMakeLists.txt') }}
+          restore-keys: |
+            v2-${{ runner.os }}-${{ matrix.build_type }}-
+
+      - name: Configure
+        run: >
+          cmake -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build
+        run: cmake --build build --config ${{ matrix.build_type }}
