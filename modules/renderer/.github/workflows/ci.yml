@@ -27,13 +27,13 @@ jobs:
         with:
           repository: ATOM-s-Technically-Optimized-Machine/module-core
           path: deps/module-core
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.MAIN_REPO_TOKEN }}
 
       - uses: actions/checkout@v4
         with:
           repository: ATOM-s-Technically-Optimized-Machine/module-ressources
           path: deps/module-ressources
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.MAIN_REPO_TOKEN }}
 
       - uses: lukka/get-cmake@latest
         with:
