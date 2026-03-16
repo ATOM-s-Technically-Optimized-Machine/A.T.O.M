@@ -100,8 +100,10 @@ class Registry
      */
     template <ComponentType T> ComponentPool<T> &getPool()
     {
-        if (!componentExists<T>())
-            throw ERROR::UnregisteredComponent(typeid(T).name());
+        #ifdef BLOB_DEBUG
+            if (!componentExists<T>())
+                throw ERROR::UnregisteredComponent(typeid(T).name());
+        #endif
         return *(static_cast<ComponentPool<T> *>(m_pool_list[ComponentTypeId::get<T>()]));
     }
 
