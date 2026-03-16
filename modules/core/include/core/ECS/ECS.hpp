@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <queue>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -46,7 +47,7 @@ class ECS
      * @param use_as_power OPTIONAL specify if the max_entities is to be interpreted as a power of 2
      * or as a litteral limit (false by default)
      */
-    ECS(std::size_t max_entities = 0, bool use_as_power = false)
+    ECS([[maybe_unused]] std::size_t max_entities = 0, [[maybe_unused]] bool use_as_power = false)
     {
         for (std::size_t i = 0; i < 32; i++)
         {
@@ -360,25 +361,26 @@ class ECS
         return registry.getPool<T>();
     }
 
-    /**
-     * @brief Adds a new system to the ECS
-     *
-     * @tparam T The system class
-     * @param tickrate The ticks (calls to Update()) the system should skip after ticked
-     * @return SystemID The new ID for the system
-     */
-    template <SystemClass T, typename... Args> SystemID addSystem(Args &&...args)
-    {
-        static SystemID id = 0;
-        SystemData data;
+            /**
+             * @brief Adds a new system to the ECS
+             * 
+             * @tparam T The system class
+             * @param tickrate The ticks (calls to Update()) the system should skip after ticked
+             * @return SystemID The new ID for the system
+             */
+            template<SystemClass T, typename... Args>
+            SystemID addSystem(Args&&... args)
+            {
+                SystemID id = static_cast<SystemID>(m_systems.size());
+                SystemData data;
 
-        data.enabled = true;
-        data.sys = new T(std::forward<Args>(args)...);
-        data.tickrate = 0;
-        data.skipped_ticks = 0;
-        m_systems.push_back(data);
-        return id++;
-    }
+                data.enabled = true;
+                data.sys = new T(std::forward<Args>(args)...);
+                data.tickrate = 0;
+                data.skipped_ticks = 0;
+                m_systems.push_back(data);
+                return id;
+            }
 
     void setSystemTickrate(SystemID sys_id, int tickrate)
     {
@@ -413,13 +415,20 @@ class ECS
         return m_systems[sys].enabled;
     }
 
+            ISystem *getSystem(SystemID sys)
+            {
+                if (sys >= m_systems.size())
+                    throw std::runtime_error("Invalid system ID");
+                return m_systems[sys].sys;
+            }
+
     /**
      * @brief Updates every active systems
      *
      */
     void Update(uint32_t msecs = 0)
     {
-        for (SystemID i = 0; i < m_systems.size(); i++)
+        for (SystemID i = 0; i < static_cast<uint16_t>(m_systems.size()); i++)
         {
             auto &it = m_systems.at(i);
             if (!it.enabled)
