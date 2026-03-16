@@ -206,8 +206,11 @@ void RenderSystem::Update(ECS::ECS &ecs, uint32_t ms)
         glfwGetFramebufferSize(m_window, &W, &H);
     }
 
-    auto entities = ecs.getEntitiesByComponentsAllOf<MeshHandleComponent, TransformComponent>();
-    auto cameras = ecs.getEntitiesByComponentsAllOf<Atom::Input::CameraComponent>();
+    std::vector<ECS::EntityID> entities;
+    std::vector<ECS::EntityID> cameras;
+
+    ecs.getEntitiesByComponentsAllOf<MeshHandleComponent, TransformComponent>(entities);
+    ecs.getEntitiesByComponentsAllOf<Atom::Input::CameraComponent>(cameras);
 
     for (auto cam_id : cameras) {
         auto &cam = ecs.entityGetComponent<Atom::Input::CameraComponent>(cam_id);
