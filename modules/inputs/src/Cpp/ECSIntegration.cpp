@@ -4,6 +4,7 @@
  */
 
 #include "inputs/ECSIntegration.hpp"
+#include "core/ECS/Includes.hpp"
 #include "inputs/InputState.hpp"
 #include "inputs/InputSystem.hpp"
 
@@ -49,7 +50,8 @@ void CameraECSSystem::Update(ECS::ECS &ecs, uint32_t msecs)
 
     // -- Update every enabled CameraComponent. ------------------------------
 
-    auto camEntities = ecs.getEntitiesByComponentsAllOf<CameraComponent>();
+    std::vector<ECS::EntityID> camEntities;
+    ecs.getEntitiesByComponentsAllOf<CameraComponent>(camEntities);
 
     for (ECS::EntityID id : camEntities)
     {
