@@ -328,6 +328,13 @@ class ECS
         return registry.getPool<T>().addComponent(e);
     }
 
+    template <typename T, typename... Args>
+        requires std::constructible_from<T, Args...>
+    T &entityAddComponent(EntityID e, Args&&... args)
+    {
+        return registry.getPool<T>().addComponent(e, std::forward<Args>(args)...);
+    }
+
     /**
      * @brief Gets the attached specified component to the specified entity
      *

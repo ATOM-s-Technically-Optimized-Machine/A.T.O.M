@@ -74,7 +74,7 @@ template <typename T> struct DenseComponent
  *
  * @tparam T The type of the set
  */
-template <ComponentType T> struct SparseSetData
+template <typename T> struct SparseSetData
 {
     std::vector<DenseComponent<T>> dense_components; // Packed components
     std::vector<uint32_t> sparse;                    // EntityID -> dense index mapping
@@ -96,7 +96,7 @@ class IComponentPool
  *
  * @tparam T The type of component the pool is storing
  */
-template <ComponentType T> class ComponentPool : public IComponentPool
+template <typename T> class ComponentPool : public IComponentPool
 {
   public:
     ComponentPool() : m_cache_dirty(true)
@@ -142,6 +142,27 @@ template <ComponentType T> class ComponentPool : public IComponentPool
 
         m_data.sparse[e] = new_dense_index;
 
+        m_cache_dirty = true;
+        return m_data.dense_components.back().component;
+    }
+
+    template <typename... Args>
+        requires std::constructible_from<T, Args...>
+    T &addComponent(EntityID e, Args&&... args)
+    {
+        if (hasComponent(e))
+            throw ERROR::ComponentAlreadyAttached(e, std::string(typeid(T).name()));
+
+        if (e >= m_data.sparse.size())
+            sparseGrow(e);
+        
+        uint32_t new_dense_index = static_cast<uint32_t>(m_data.dense_components.size());
+        m_data.dense_components.emplace_back();
+
+        m_data.dense_components[new_dense_index].entity = e;
+        m_data.dense_components[new_dense_index].component = T(std::forward<Args>(args)...);
+
+        m_data.sparse[e] = new_dense_index;
         m_cache_dirty = true;
         return m_data.dense_components.back().component;
     }
