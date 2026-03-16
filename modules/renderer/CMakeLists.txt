@@ -94,11 +94,5 @@ target_compile_options(atom-renderer PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4>
 )
 
-# ---- Sandbox executable (dev/test only) ----
-if(ATOM_RENDERER_SANDBOX)
-    add_executable(atom-renderer-sandbox src/Cpp/sandbox.cpp)
-    target_link_libraries(atom-renderer-sandbox PRIVATE atom-renderer)
-endif()
-
 # ---- Export for parent project ----
 set(ATOM_RENDERER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include PARENT_SCOPE)
