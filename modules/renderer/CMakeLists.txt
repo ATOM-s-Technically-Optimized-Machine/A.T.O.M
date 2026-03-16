@@ -71,6 +71,7 @@ target_sources(atom-renderer PRIVATE
 )
 
 target_link_libraries(atom-renderer PUBLIC
+    atom-inputs
     OpenGL::GL
     glfw
     glm::glm

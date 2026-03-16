@@ -1,3 +1,4 @@
+#include "inputs/ECSIntegration.hpp"
 #include "renderer/Renderer.hpp"
 #include "renderer/tiny_obj_loader.hpp"
 #include "renderer/glad/glad.h"
@@ -191,19 +192,21 @@ void RenderSystem::Update(ECS::ECS &ecs, ECS::SystemID id, uint32_t ms)
     glfwGetFramebufferSize(m_window, &W, &H);
     
     auto entities = ecs.getEntitiesByComponentsAllOf<MeshHandleComponent, TransformComponent>();
-    auto cameras = ecs.getEntitiesByComponentsAllOf<CameraComponent>();
+    auto cameras = ecs.getEntitiesByComponentsAllOf<Atom::Input::CameraComponent>();
 
     for (auto cam_id : cameras) {
-        auto &cam = ecs.entityGetComponent<CameraComponent>(cam_id);
+        auto &cam = ecs.entityGetComponent<Atom::Input::CameraComponent>(cam_id);
 
         if (!cam.enabled)
             continue;
         
-        glm::mat4 view = cam.getView(cam);
-        glm::mat4 projection = cam.getProjection(cam, (cam.ViewPort.width * W) / (cam.ViewPort.height * H));
+        float aspect = (cam.viewport.width * W) / (cam.viewport.height * H);
+        cam.camera.setAspect(aspect);
+        glm::mat4 view = cam.camera.viewMatrix();
+        glm::mat4 projection = cam.camera.projectionMatrix();
 
-        glViewport(cam.ViewPort.x * W, cam.ViewPort.y * H, cam.ViewPort.width * W, cam.ViewPort.height * H);
-        glScissor(cam.ViewPort.x * W, cam.ViewPort.y * H, cam.ViewPort.width * W, cam.ViewPort.height * H);
+        glViewport(cam.viewport.x * W, cam.viewport.y * H, cam.viewport.width * W, cam.viewport.height * H);
+        glScissor(cam.viewport.x * W, cam.viewport.y * H, cam.viewport.width * W, cam.viewport.height * H);
         glEnable(GL_SCISSOR_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
