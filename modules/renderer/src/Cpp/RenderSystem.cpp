@@ -158,7 +158,7 @@ RenderSystem::RenderSystem(
     m_frag_path(fragShaderPath),
     m_window(window)
 {
-    default_texture = renderer::loadTextureFromImageData(defaultTexture);
+    m_default_texture = renderer::loadTextureFromImageData(defaultTexture);
 }
 
 RenderSystem::~RenderSystem()
@@ -183,14 +183,29 @@ unsigned int RenderSystem::getShader(MeshHandleComponent::AttributesMask attrib)
     return prog;
 }
 
-void RenderSystem::Update(ECS::ECS &ecs, ECS::SystemID id, uint32_t ms)
+void RenderSystem::setTargetFBO(unsigned int fbo, int width, int height)
+{
+    m_fbo = fbo;
+    m_fbo_w = width;
+    m_fbo_h = height;
+}
+
+void RenderSystem::Update(ECS::ECS &ecs, uint32_t ms)
 {
     glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+
     int W, H;
-    glfwGetFramebufferSize(m_window, &W, &H);
-    
+
+    if (m_fbo) {
+        W = m_fbo_w;
+        H = m_fbo_h;
+    } else {
+        glfwGetFramebufferSize(m_window, &W, &H);
+    }
+
     auto entities = ecs.getEntitiesByComponentsAllOf<MeshHandleComponent, TransformComponent>();
     auto cameras = ecs.getEntitiesByComponentsAllOf<Atom::Input::CameraComponent>();
 
@@ -230,7 +245,7 @@ void RenderSystem::Update(ECS::ECS &ecs, ECS::SystemID id, uint32_t ms)
             
             glBindVertexArray(mesh.VAO);
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, mesh.texture ? mesh.texture : default_texture);
+            glBindTexture(GL_TEXTURE_2D, mesh.texture ? mesh.texture : m_default_texture);
             glUniform1i(glGetUniformLocation(shader_prog, "uTexture"), 0);
             glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, 0);
             glBindVertexArray(0);
@@ -239,4 +254,5 @@ void RenderSystem::Update(ECS::ECS &ecs, ECS::SystemID id, uint32_t ms)
 
     glfwSwapBuffers(m_window);
     glfwPollEvents();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

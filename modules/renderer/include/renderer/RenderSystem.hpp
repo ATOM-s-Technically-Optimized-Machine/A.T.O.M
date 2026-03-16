@@ -68,14 +68,18 @@ class RenderSystem : public ECS::ISystem {
         ~RenderSystem();
 
         unsigned int getShader(MeshHandleComponent::AttributesMask attrib);
+        void setTargetFBO(unsigned int fbo, int fbo_w, int fbo_h);
 
-        void Update(ECS::ECS &ecs, ECS::SystemID id, uint32_t ms) override;
+        void Update(ECS::ECS &ecs, uint32_t ms) override;
     private:
         std::string m_vert_path;
         std::string m_frag_path;
         std::unordered_map<int, unsigned int> m_shader_cache;
         GLFWwindow *m_window;
-        unsigned int default_texture;
+        unsigned int m_default_texture;
+        unsigned int m_fbo = 0;
+        int m_fbo_w;
+        int m_fbo_h;
 };
 
 #endif /* !RENDER_SYSTEM_HPP_ */
