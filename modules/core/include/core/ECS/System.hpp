@@ -36,7 +36,7 @@ class ISystem
   public:
     virtual ~ISystem() = default;
 
-    virtual void Update(ECS &, SystemID thisID, uint32_t msecs) = 0;
+    virtual void Update(ECS &ecs, uint32_t msecs) = 0;
 
   protected:
   private:

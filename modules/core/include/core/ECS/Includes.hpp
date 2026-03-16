@@ -63,13 +63,6 @@ struct Entity
     EntityGroup group = NONE;
 };
 
-struct SystemData
-{
-    bool enabled;
-    ISystem *sys;
-    int tickrate;
-    int skipped_ticks;
-};
 } // namespace ECS
 
 #endif /* !INCLUDES_HPP_ */

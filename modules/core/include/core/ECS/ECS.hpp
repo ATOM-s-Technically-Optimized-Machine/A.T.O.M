@@ -29,9 +29,13 @@
 #include "System.hpp"
 
 #include <algorithm>
+#include <concepts>
 #include <cstddef>
+#include <memory>
 #include <queue>
 #include <stdexcept>
+#include <typeindex>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -361,32 +365,23 @@ class ECS
         return registry.getPool<T>();
     }
 
-            /**
-             * @brief Adds a new system to the ECS
-             * 
-             * @tparam T The system class
-             * @param tickrate The ticks (calls to Update()) the system should skip after ticked
-             * @return SystemID The new ID for the system
-             */
-            template<SystemClass T, typename... Args>
-            SystemID addSystem(Args&&... args)
-            {
-                SystemID id = static_cast<SystemID>(m_systems.size());
-                SystemData data;
-
-                data.enabled = true;
-                data.sys = new T(std::forward<Args>(args)...);
-                data.tickrate = 0;
-                data.skipped_ticks = 0;
-                m_systems.push_back(data);
-                return id;
-            }
-
-    void setSystemTickrate(SystemID sys_id, int tickrate)
+    /**
+        * @brief Adds a new system to the ECS
+        * 
+        * @tparam T The system class
+        * @param tickrate The ticks (calls to Update()) the system should skip after ticked
+        * @return SystemID The new ID for the system
+        */
+    template<SystemClass T, typename... Args>
+        requires std::constructible_from<T, Args...>
+    T &addSystem(Args&&... args)
     {
-        if (sys_id >= m_systems.size())
-            return;
-        m_systems[sys_id].tickrate = tickrate;
+        auto system = std::make_unique<T>(std::forward<Args>(args)...);
+        T *ptr = system.get();
+
+        m_systems.insert_or_assign(std::type_index(typeid(T)), std::move(system));
+        m_active_systems.push_back(ptr);
+        return *ptr;
     }
 
     /**
@@ -394,11 +389,17 @@ class ECS
      *
      * @param id The id of the system to toggle
      */
-    void toggleSystem(SystemID id)
+    template<SystemClass T>
+    void toggleSystem()
     {
-        if (id >= m_systems.size())
-            return;
-        m_systems[id].enabled = !m_systems[id].enabled;
+        ISystem *ptr = m_systems[std::type_index(typeid(T))].get();
+
+        const auto &it = std::find(m_active_systems.begin(), m_active_systems.end(), ptr);
+
+        if (it == m_active_systems.end())
+            m_active_systems.push_back(ptr);
+        else
+            m_active_systems.erase(it);
     }
 
     /**
@@ -408,19 +409,13 @@ class ECS
      * @return true Is the system is enabled,
      * @return false if it is not
      */
-    bool systemIsEnabled(SystemID sys)
+    template<SystemClass T>
+    bool systemIsEnabled()
     {
-        if (sys >= m_systems.size())
-            return false;
-        return m_systems[sys].enabled;
-    }
+        ISystem *ptr = m_systems[std::type_index(typeid(T))].get();
 
-            ISystem *getSystem(SystemID sys)
-            {
-                if (sys >= m_systems.size())
-                    throw std::runtime_error("Invalid system ID");
-                return m_systems[sys].sys;
-            }
+        return std::find(m_active_systems.begin(), m_active_systems.end(), ptr) != m_active_systems.end();
+    }
 
     /**
      * @brief Updates every active systems
@@ -428,20 +423,8 @@ class ECS
      */
     void Update(uint32_t msecs = 0)
     {
-        for (SystemID i = 0; i < static_cast<uint16_t>(m_systems.size()); i++)
-        {
-            auto &it = m_systems.at(i);
-            if (!it.enabled)
-                continue;
-            if (it.skipped_ticks >= it.tickrate)
-            {
-                it.sys->Update(*this, i, msecs);
-                it.skipped_ticks = 0;
-            }
-            else
-            {
-                it.skipped_ticks++;
-            }
+        for (auto system : m_active_systems) {
+            system->Update(*this, msecs);
         }
     }
 
@@ -452,7 +435,8 @@ class ECS
     std::queue<EntityID> m_available_ids;
     std::size_t m_active_entities = 0;
     std::vector<Entity> m_entities;
-    std::vector<SystemData> m_systems;
+    std::unordered_map<std::type_index, std::unique_ptr<ISystem>> m_systems;
+    std::vector<ISystem*> m_active_systems;
 };
 } // namespace ECS
 
