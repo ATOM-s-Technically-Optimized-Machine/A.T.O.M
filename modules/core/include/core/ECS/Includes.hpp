@@ -45,24 +45,18 @@ using EntityID = uint32_t;
 // Alias for uint16_t, used to represent a System within the ECS
 using SystemID = uint16_t;
 
-// Entity groups, modify this enum to add new groups to the system
-enum EntityGroup
-{
-    NONE,
-    EXAMPLES
+using SysPriority = uint8_t;
+
+struct SystemEntry {
+    ISystem *sys;
+    SysPriority priority;
 };
 
-/*
-    This is how an entity is stored within the ECS
-    isActive represents if an entity exists or not
-    group represents a group which the entity belongs to
-*/
-struct Entity
-{
-    bool isActive = false;
-    EntityGroup group = NONE;
-};
+constexpr std::size_t COMPONENT_POOL_SPARSE_DEFAULT = 20000;
+constexpr std::size_t COMPONENT_POOL_DENSE_DEFAULT = 10000;
+constexpr SysPriority SYSTEM_PRIORITY_DEFAULT = 10;
 
 } // namespace ECS
+
 
 #endif /* !INCLUDES_HPP_ */

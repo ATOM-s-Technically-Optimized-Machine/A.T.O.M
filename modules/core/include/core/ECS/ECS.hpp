@@ -36,6 +36,7 @@
 #include <stdexcept>
 #include <typeindex>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -53,10 +54,6 @@ class ECS
      */
     ECS([[maybe_unused]] std::size_t max_entities = 0, [[maybe_unused]] bool use_as_power = false)
     {
-        for (std::size_t i = 0; i < 32; i++)
-        {
-            m_entities.push_back(Entity());
-        }
     }
 
     ~ECS()
@@ -82,9 +79,7 @@ class ECS
      */
     bool entityIsActive(EntityID e)
     {
-        if (m_entities.size() <= e)
-            return false;
-        return m_entities[e].isActive;
+        return e < m_id_counter && !m_available_ids.count(e);
     }
 
     /**
@@ -102,58 +97,12 @@ class ECS
         }
         else
         {
-            newId = m_available_ids.front();
-            m_available_ids.pop();
+            const auto &it = m_available_ids.begin();
+            newId = *it;
+            m_available_ids.erase(it);
         }
-        if (m_active_entities >= m_entities.size())
-        {
-            std::size_t current_capacity = m_entities.size();
-            for (std::size_t i = 0; i < current_capacity; i++)
-            {
-                m_entities.push_back(Entity());
-            }
-        }
-        m_entities[newId].isActive = true;
-        m_entities[newId].group = NONE;
         m_active_entities++;
         return newId;
-    }
-
-    /**
-     * @brief Creates an entity and sets its group
-     *
-     * Alias for:
-     * entitySetGroup(entityCreate(), group);
-     *
-     * @param group The entity group
-     * @return EntityID The created entity's ID
-     */
-    EntityID entityCreate(EntityGroup group)
-    {
-        EntityID e = this->entityCreate();
-
-        this->entitySetGroup(e, group);
-        return e;
-    }
-
-    /**
-     * @brief Set the group of an entity
-     *
-     * @param id The ID of the entity
-     * @param group The new group the entity should belong to
-     */
-    void entitySetGroup(EntityID id, EntityGroup group)
-    {
-        if (m_entities.size() <= id)
-            return;
-        m_entities[id].group = group;
-    }
-
-    EntityGroup entityGetGroup(EntityID id)
-    {
-        if (m_entities.size() <= id)
-            return EntityGroup::NONE;
-        return m_entities[id].group;
     }
 
     /**
@@ -163,32 +112,11 @@ class ECS
      */
     void entityDelete(EntityID e)
     {
-        if (m_entities.size() <= e)
-            return;
         if (!entityIsActive(e))
             return;
-        m_entities[e].isActive = false;
-        m_available_ids.push(e);
+        m_available_ids.insert(e);
         m_active_entities--;
         registry.disableEntity(e);
-    }
-
-    /**
-     * @brief Returns a vector containing the IDs of entities belonging to group 'group'
-     *
-     * @param group The group to target
-     * @return std::vector<EntityID> The list of entities
-     */
-    std::vector<EntityID> getEntityGroup(EntityGroup group)
-    {
-        std::vector<EntityID> grp;
-
-        for (std::size_t i = 0; i < m_entities.size(); i++)
-        {
-            if (m_entities[i].isActive && m_entities[i].group == group)
-                grp.push_back(i);
-        }
-        return grp;
     }
 
     /**
@@ -197,11 +125,12 @@ class ECS
      * @tparam Components The component types to check for (variadic template)
      * @return std::vector<EntityID> The list of entities that have all specified components
      */
-    template <ComponentType... Components> std::vector<EntityID> getEntitiesByComponentsAllOf()
+    template <ComponentType... Components> void getEntitiesByComponentsAllOf(std::vector<EntityID> &buff)
     {
+        buff.clear();
         if constexpr (sizeof...(Components) == 0)
         {
-            return {};
+            return;
         }
 
         std::vector<std::vector<EntityID>> component_lists;
@@ -213,7 +142,7 @@ class ECS
 
         if (component_lists.empty())
         {
-            return {};
+            return;
         }
 
         auto smallest_it =
@@ -221,7 +150,7 @@ class ECS
                              [](const std::vector<EntityID> &a, const std::vector<EntityID> &b)
                              { return a.size() < b.size(); });
 
-        std::vector<EntityID> result = *smallest_it;
+        buff = *smallest_it;
 
         for (const auto &comp_list : component_lists)
         {
@@ -229,15 +158,13 @@ class ECS
                 continue;
 
             std::vector<EntityID> intersection;
-            std::set_intersection(result.begin(), result.end(), comp_list.begin(), comp_list.end(),
+            std::set_intersection(buff.begin(), buff.end(), comp_list.begin(), comp_list.end(),
                                   std::back_inserter(intersection));
-            result = std::move(intersection);
+            buff = std::move(intersection);
 
-            if (result.empty())
+            if (buff.empty())
                 break;
         }
-
-        return result;
     }
 
     /**
@@ -248,24 +175,22 @@ class ECS
      * @return std::vector<EntityID> The list of entities that have at least one of the specified
      * components
      */
-    template <ComponentType... Components> std::vector<EntityID> getEntitiesByComponentsAnyOf()
+    template <ComponentType... Components> void getEntitiesByComponentsAnyOf(std::vector<EntityID> &buff)
     {
+        buff.clear();
+        static std::unordered_set<EntityID> seen;
+        seen.clear();
+
         if constexpr (sizeof...(Components) == 0)
         {
-            return {};
+            return;
         }
 
-        std::vector<EntityID> result;
-
-        auto addEntities = [&result](const std::vector<EntityID> &entities)
+        auto addEntities = [&](const std::vector<EntityID> &entities)
         {
-            for (EntityID id : entities)
-            {
-                if (std::find(result.begin(), result.end(), id) == result.end())
-                {
-                    result.push_back(id);
-                }
-            }
+            for (EntityID e : entities)
+                if (seen.insert(e).second)
+                    buff.push_back(e);
         };
 
         ((componentExists<Components>()
@@ -273,9 +198,7 @@ class ECS
               : void()),
          ...);
 
-        std::sort(result.begin(), result.end());
-
-        return result;
+        std::sort(buff.begin(), buff.end());
     }
 
     /**
@@ -349,6 +272,11 @@ class ECS
         return registry.getPool<T>().getComponent(e);
     }
 
+    template <ComponentType T> const T &entityGetComponent(EntityID e) const
+    {
+        return static_cast<const T&>(registry.getPool<T>().getComponent(e));
+    }
+
     /**
      * @brief Removes the attached component from the entity
      *
@@ -387,7 +315,8 @@ class ECS
         T *ptr = system.get();
 
         m_systems.insert_or_assign(std::type_index(typeid(T)), std::move(system));
-        m_active_systems.push_back(ptr);
+        m_active_systems.push_back({ptr, SYSTEM_PRIORITY_DEFAULT});
+        reorderSystems();
         return *ptr;
     }
 
@@ -401,12 +330,13 @@ class ECS
     {
         ISystem *ptr = m_systems[std::type_index(typeid(T))].get();
 
-        const auto &it = std::find(m_active_systems.begin(), m_active_systems.end(), ptr);
+        const auto &it = std::find_if(m_active_systems.begin(), m_active_systems.end(), [ptr](SystemEntry &elem) {return elem.sys == ptr; });
 
         if (it == m_active_systems.end())
-            m_active_systems.push_back(ptr);
+            m_active_systems.push_back({ptr, SYSTEM_PRIORITY_DEFAULT});
         else
             m_active_systems.erase(it);
+        reorderSystems();
     }
 
     /**
@@ -421,7 +351,18 @@ class ECS
     {
         ISystem *ptr = m_systems[std::type_index(typeid(T))].get();
 
-        return std::find(m_active_systems.begin(), m_active_systems.end(), ptr) != m_active_systems.end();
+        return std::find_if(m_active_systems.begin(), m_active_systems.end(), [ptr](SystemEntry &elem) {return elem.sys == ptr; }) != m_active_systems.end();
+    }
+
+    template<SystemClass T>
+    void systemSetPriority(SysPriority priority)
+    {
+        ISystem *ptr = m_systems[std::type_index(typeid(T))].get();
+
+        const auto &it = std::find_if(m_active_systems.begin(), m_active_systems.end(), [ptr](SystemEntry &elem) {return elem.sys == ptr; });
+        if (it != m_active_systems.end())
+            it->priority = priority;
+        reorderSystems();
     }
 
     /**
@@ -431,19 +372,28 @@ class ECS
     void Update(uint32_t msecs = 0)
     {
         for (auto system : m_active_systems) {
-            system->Update(*this, msecs);
+            system.sys->Update(*this, msecs);
         }
     }
 
     Registry registry;
 
   private:
+
+    void reorderSystems()
+    {
+        std::sort(
+            m_active_systems.begin(),
+            m_active_systems.end(),
+            [](SystemEntry &a, SystemEntry &b) { return a.priority < b.priority; }
+        );
+    }
+
     EntityID m_id_counter = 0;
-    std::queue<EntityID> m_available_ids;
+    std::unordered_set<EntityID> m_available_ids;
     std::size_t m_active_entities = 0;
-    std::vector<Entity> m_entities;
     std::unordered_map<std::type_index, std::unique_ptr<ISystem>> m_systems;
-    std::vector<ISystem*> m_active_systems;
+    std::vector<SystemEntry> m_active_systems;
 };
 } // namespace ECS
 

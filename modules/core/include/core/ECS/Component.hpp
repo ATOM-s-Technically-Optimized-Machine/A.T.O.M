@@ -101,8 +101,8 @@ template <typename T> class ComponentPool : public IComponentPool
   public:
     ComponentPool() : m_cache_dirty(true)
     {
-        m_data.dense_components.reserve(10000);
-        m_data.sparse.reserve(100000);
+        m_data.dense_components.reserve(COMPONENT_POOL_DENSE_DEFAULT);
+        m_data.sparse.reserve(COMPONENT_POOL_SPARSE_DEFAULT);
     }
 
     ~ComponentPool()
@@ -136,9 +136,10 @@ template <typename T> class ComponentPool : public IComponentPool
             sparseGrow(e);
 
         uint32_t new_dense_index = static_cast<uint32_t>(m_data.dense_components.size());
-        m_data.dense_components.emplace_back();
-
-        m_data.dense_components[new_dense_index].entity = e;
+        m_data.dense_components.push_back({
+            T(),
+            e
+        });
 
         m_data.sparse[e] = new_dense_index;
 
@@ -157,10 +158,10 @@ template <typename T> class ComponentPool : public IComponentPool
             sparseGrow(e);
         
         uint32_t new_dense_index = static_cast<uint32_t>(m_data.dense_components.size());
-        m_data.dense_components.emplace_back();
-
-        m_data.dense_components[new_dense_index].entity = e;
-        m_data.dense_components[new_dense_index].component = T(std::forward<Args>(args)...);
+        m_data.dense_components.push_back({
+            T(std::forward<Args>(args)...),
+            e
+        });
 
         m_data.sparse[e] = new_dense_index;
         m_cache_dirty = true;
