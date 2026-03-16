@@ -14,7 +14,7 @@ namespace Atom::Input
 // InputECSSystem
 // ---------------------------------------------------------------------------
 
-void InputECSSystem::Update([[maybe_unused]]ECS::ECS &ecs, ECS::SystemID /*thisID*/, uint32_t msecs)
+void InputECSSystem::Update([[maybe_unused]]ECS::ECS &ecs, uint32_t msecs)
 {
     m_input_system->update(static_cast<uint64_t>(msecs));
 }
@@ -42,7 +42,7 @@ CameraECSSystem::CameraECSSystem(std::shared_ptr<InputSystem> input)
 {
 }
 
-void CameraECSSystem::Update(ECS::ECS &ecs, ECS::SystemID /*thisID*/, uint32_t msecs)
+void CameraECSSystem::Update(ECS::ECS &ecs, uint32_t msecs)
 {
     const InputState &inputState = m_input->state();
     float dt = static_cast<float>(msecs) / 1000.0f;

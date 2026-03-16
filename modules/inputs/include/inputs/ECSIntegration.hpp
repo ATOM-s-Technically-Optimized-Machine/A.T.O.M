@@ -86,7 +86,7 @@ class InputECSSystem : public ECS::ISystem
      * @param thisID The system's own ID.
      * @param msecs  Milliseconds elapsed since the last tick.
      */
-    void Update(ECS::ECS &ecs, ECS::SystemID thisID, uint32_t msecs) override;
+    void Update(ECS::ECS &ecs, uint32_t msecs) override;
 
     std::shared_ptr<InputSystem> inputSystem() const;
 
@@ -124,7 +124,7 @@ class CameraECSSystem : public ECS::ISystem
      * @param thisID The system's own ID.
      * @param msecs  Milliseconds elapsed since the last tick.
      */
-    void Update(ECS::ECS &ecs, ECS::SystemID thisID, uint32_t msecs) override;
+    void Update(ECS::ECS &ecs, uint32_t msecs) override;
 
   private:
     FPSCamera m_fps;         ///< Shared FPS controller instance.
