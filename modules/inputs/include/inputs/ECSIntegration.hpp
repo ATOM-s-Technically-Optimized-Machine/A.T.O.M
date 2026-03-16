@@ -37,45 +37,6 @@ enum class ControlMode : uint8_t
 };
 
 // ---------------------------------------------------------------------------
-// InputComponent
-// ---------------------------------------------------------------------------
-
-/**
- * @brief ECS singleton component that owns the input system (and an
- *        optional GLFW bridge).
- *
- * Attach this to exactly one entity to make the input pipeline available
- * inside the ECS.  The component is non-copyable but movable so that the
- * sparse-set swap-and-pop storage strategy works correctly.
- */
-struct InputComponent
-{
-    /// @brief Default-construct the component (required by ECS ComponentType).
-    InputComponent() = default;
-
-    /// Non-copyable.
-    InputComponent(const InputComponent &) = delete;
-
-    /// Non-copyable.
-    InputComponent &operator=(const InputComponent &) = delete;
-
-    /// Movable.
-    InputComponent(InputComponent &&) noexcept = default;
-
-    /// Movable.
-    InputComponent &operator=(InputComponent &&) noexcept = default;
-
-    InputSystem system; ///< The underlying input system facade.
-
-#ifdef ATOM_INPUT_HAS_GLFW
-    /**
-     * @brief Optional GLFW bridge (nullptr when no GLFW window is bound).
-     */
-    std::unique_ptr<GLFWBridge> bridge;
-#endif
-};
-
-// ---------------------------------------------------------------------------
 // CameraComponent
 // ---------------------------------------------------------------------------
 
@@ -112,22 +73,34 @@ struct CameraComponent
 // ---------------------------------------------------------------------------
 
 /**
- * @brief Processes input events for all InputComponent entities each frame.
+ * @brief Processes input events for InputSystem each frame.
  *
- * Register this system in the ECS so that every InputComponent's
- * InputSystem is updated once per tick.
+ * Register this system in the ECS
  */
 class InputECSSystem : public ECS::ISystem
 {
   public:
     /**
-     * @brief Iterate all entities with an InputComponent and call
-     *        InputSystem::update() on each.
+     * @brief Calls InputSystem.update();
      * @param ecs    The ECS instance.
      * @param thisID The system's own ID.
      * @param msecs  Milliseconds elapsed since the last tick.
      */
     void Update(ECS::ECS &ecs, ECS::SystemID thisID, uint32_t msecs) override;
+
+    std::shared_ptr<InputSystem> inputSystem() const;
+
+#ifdef ATOM_INPUT_HAS_GLFW
+    void bindGLFW(GLFWwindow *window);
+#endif
+  private:
+    std::shared_ptr<InputSystem> m_input_system = std::make_shared<InputSystem>(); ///< Input system tied to the ECS system instance.
+#ifdef ATOM_INPUT_HAS_GLFW
+    /**
+     * @brief Optional GLFW bridge (nullptr when no GLFW window is bound).
+     */
+    std::unique_ptr<GLFWBridge> m_bridge;
+#endif
 };
 
 // ---------------------------------------------------------------------------
@@ -135,8 +108,7 @@ class InputECSSystem : public ECS::ISystem
 // ---------------------------------------------------------------------------
 
 /**
- * @brief Updates all CameraComponent entities using the input state from
- *        the first InputComponent.
+ * @brief Updates all CameraComponent entities using the input state.
  *
  * Register this system **after** InputECSSystem so that input state is
  * fresh when cameras are updated.
@@ -144,6 +116,7 @@ class InputECSSystem : public ECS::ISystem
 class CameraECSSystem : public ECS::ISystem
 {
   public:
+    CameraECSSystem(std::shared_ptr<InputSystem> input);
     /**
      * @brief Update every enabled CameraComponent using the current
      *        InputState.
@@ -156,6 +129,7 @@ class CameraECSSystem : public ECS::ISystem
   private:
     FPSCamera m_fps;         ///< Shared FPS controller instance.
     OrbitalCamera m_orbital; ///< Shared Orbital controller instance.
+    std::shared_ptr<InputSystem> m_input;
 };
 
 } // namespace Atom::Input

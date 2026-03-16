@@ -4,6 +4,8 @@
  */
 
 #include "inputs/ECSIntegration.hpp"
+#include "inputs/InputState.hpp"
+#include "inputs/InputSystem.hpp"
 
 namespace Atom::Input
 {
@@ -12,36 +14,37 @@ namespace Atom::Input
 // InputECSSystem
 // ---------------------------------------------------------------------------
 
-void InputECSSystem::Update(ECS::ECS &ecs, ECS::SystemID /*thisID*/, uint32_t msecs)
+void InputECSSystem::Update([[maybe_unused]]ECS::ECS &ecs, ECS::SystemID /*thisID*/, uint32_t msecs)
 {
-    auto entities = ecs.getEntitiesByComponentsAllOf<InputComponent>();
-
-    for (ECS::EntityID id : entities)
-    {
-        InputComponent &input = ecs.entityGetComponent<InputComponent>(id);
-        input.system.update(static_cast<uint64_t>(msecs));
-    }
+    m_input_system->update(static_cast<uint64_t>(msecs));
 }
+
+std::shared_ptr<InputSystem> InputECSSystem::inputSystem() const
+{
+    return m_input_system;
+}
+
+#ifdef ATOM_INPUT_HAS_GLFW
+
+void InputECSSystem::bindGLFW(GLFWwindow *window)
+{
+    m_bridge = std::make_unique<GLFWBridge>(window, m_input_system->eventQueue());
+}
+
+#endif
 
 // ---------------------------------------------------------------------------
 // CameraECSSystem
 // ---------------------------------------------------------------------------
 
+CameraECSSystem::CameraECSSystem(std::shared_ptr<InputSystem> input)
+: m_input(std::move(input))
+{
+}
+
 void CameraECSSystem::Update(ECS::ECS &ecs, ECS::SystemID /*thisID*/, uint32_t msecs)
 {
-    // -- Locate the first InputComponent to read input state from. ----------
-
-    auto inputEntities = ecs.getEntitiesByComponentsAllOf<InputComponent>();
-
-    if (inputEntities.empty())
-    {
-        return;
-    }
-
-    ECS::EntityID inputEntity = inputEntities.front();
-    const InputState &inputState =
-        ecs.entityGetComponent<InputComponent>(inputEntity).system.state();
-
+    const InputState &inputState = m_input->state();
     float dt = static_cast<float>(msecs) / 1000.0f;
 
     // -- Update every enabled CameraComponent. ------------------------------
@@ -50,7 +53,7 @@ void CameraECSSystem::Update(ECS::ECS &ecs, ECS::SystemID /*thisID*/, uint32_t m
 
     for (ECS::EntityID id : camEntities)
     {
-        CameraComponent &cam = ecs.entityGetComponent<CameraComponent>(id);
+        auto &cam = ecs.entityGetComponent<CameraComponent>(id);
 
         if (!cam.enabled)
         {
