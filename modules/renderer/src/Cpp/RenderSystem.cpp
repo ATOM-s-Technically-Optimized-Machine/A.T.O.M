@@ -192,10 +192,11 @@ void RenderSystem::setTargetFBO(unsigned int fbo, int width, int height)
 
 void RenderSystem::Update(ECS::ECS &ecs, uint32_t ms)
 {
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+
     glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
     int W, H;
 
@@ -214,9 +215,6 @@ void RenderSystem::Update(ECS::ECS &ecs, uint32_t ms)
 
     for (auto cam_id : cameras) {
         auto &cam = ecs.entityGetComponent<Atom::Input::CameraComponent>(cam_id);
-
-        if (!cam.enabled)
-            continue;
         
         float aspect = (cam.viewport.width * W) / (cam.viewport.height * H);
         cam.camera.setAspect(aspect);
@@ -255,7 +253,5 @@ void RenderSystem::Update(ECS::ECS &ecs, uint32_t ms)
         }
     }
 
-    glfwSwapBuffers(m_window);
-    glfwPollEvents();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
