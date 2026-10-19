@@ -1,0 +1,62 @@
+/*
+ *  Includes
+ *
+ *  Blob ECS is a lightweight Entity Component System library
+ *  Copyright (C) 2025 LECOCQ Guillaume
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU Lesser General Public
+ *  License as published by the Free Software Foundation; either
+ *  version 2.1 of the License, or (at your option) any later version.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public
+ *  License along with this library; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ *  USA
+ */
+
+#ifndef INCLUDES_HPP_
+#define INCLUDES_HPP_
+
+#include <cstdint>
+#include <type_traits>
+
+namespace ECS
+{
+class ISystem;
+class ECS;
+
+// Concept for accepting system classes
+template <typename T>
+concept SystemClass = std::is_base_of_v<ISystem, T>;
+
+// Concept for accepting components
+template <typename T>
+concept ComponentType = std::is_default_constructible_v<T>;
+
+// Alias for uint32_t, used to represent, locate and perform actions on entities
+using EntityID = uint32_t;
+
+// Alias for uint16_t, used to represent a System within the ECS
+using SystemID = uint16_t;
+
+using SysPriority = uint8_t;
+
+struct SystemEntry {
+    ISystem *sys;
+    SysPriority priority;
+};
+
+constexpr std::size_t COMPONENT_POOL_SPARSE_DEFAULT = 20000;
+constexpr std::size_t COMPONENT_POOL_DENSE_DEFAULT = 10000;
+constexpr SysPriority SYSTEM_PRIORITY_DEFAULT = 10;
+
+} // namespace ECS
+
+
+#endif /* !INCLUDES_HPP_ */
