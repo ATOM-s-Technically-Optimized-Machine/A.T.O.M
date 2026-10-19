@@ -11,6 +11,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# ---- Output layout ----
+# Every executable (atom-editor, atom-demo, ...) lands in <build-dir>/bin/,
+# e.g. build/dev/bin/atom-editor, instead of deep inside the module tree.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
 # ---- Common dependencies ----
 include(FetchContent)
 
@@ -26,7 +31,7 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/glfw/glfw.git
     GIT_TAG        3.4
     GIT_SHALLOW    TRUE
-    FIND_PACKAGE_ARGS
+    FIND_PACKAGE_ARGS NAMES glfw3
 )
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -35,6 +40,10 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(glm glfw)
 
 # ---- Modules ----
+# atom-editor (modules/tools) drives the inputs module through its GLFW bridge,
+# so the bridge is always built. Must be set before modules/inputs is added.
+set(ATOM_INPUT_USE_GLFW ON)
+
 set(ATOM_MODULES
     core
     ressources
@@ -54,3 +63,10 @@ foreach(mod IN LISTS ATOM_MODULES)
         message(STATUS "Skipping module '${mod}' — no CMakeLists.txt")
     endif()
 endforeach()
+
+# ---- Demos ----
+option(ATOM_BUILD_DEMOS "Build project-wide demo" OFF)
+
+if(ATOM_BUILD_DEMOS)
+    add_subdirectory(demo)
+endif()

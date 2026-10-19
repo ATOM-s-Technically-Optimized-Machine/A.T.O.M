@@ -1,27 +1,3 @@
-[submodule "modules/core"]
-	path = modules/core
-	url = https://github.com/ATOM-s-Technically-Optimized-Machine/module-core.git
-[submodule "modules/renderer"]
-	path = modules/renderer
-	url = https://github.com/ATOM-s-Technically-Optimized-Machine/module-renderer.git
-[submodule "modules/inputs"]
-	path = modules/inputs
-	url = https://github.com/ATOM-s-Technically-Optimized-Machine/module-inputs.git
-[submodule "modules/audio"]
-	path = modules/audio
-	url = https://github.com/ATOM-s-Technically-Optimized-Machine/module-audio.git
-[submodule "modules/physics"]
-	path = modules/physics
-	url = https://github.com/ATOM-s-Technically-Optimized-Machine/module-physics.git
-[submodule "modules/ressources"]
-	path = modules/ressources
-	url = https://github.com/ATOM-s-Technically-Optimized-Machine/module-ressources.git
-[submodule "modules/script"]
-	path = modules/script
-	url = https://github.com/ATOM-s-Technically-Optimized-Machine/module-script.git
-[submodule "modules/tools"]
-	path = modules/tools
-	url = https://github.com/ATOM-s-Technically-Optimized-Machine/module-tools.git
-[submodule "modules/network"]
-	path = modules/network
-	url = https://github.com/ATOM-s-Technically-Optimized-Machine/module-network.git
+[submodule "Blob-ECS"]
+	path = modules/core/include/core/ECS
+	url = https://github.com/guilec06/Blob-ECS.git
