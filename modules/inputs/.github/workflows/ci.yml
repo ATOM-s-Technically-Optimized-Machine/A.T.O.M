@@ -1,0 +1,165 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Build + Test (Multi-platform matrix) ──────────────────────────────────
+  build:
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        build_type: [Debug, Release]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "~3.31.0"
+          ninjaVersion: "^1.12.1"
+
+      - name: Cache build
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: v2-${{ runner.os }}-${{ matrix.build_type }}-${{ hashFiles('CMakeLists.txt') }}
+          restore-keys: |
+            v2-${{ runner.os }}-${{ matrix.build_type }}-
+
+      - name: Configure
+        run: >
+          cmake -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DATOM_INPUTS_BUILD_TESTS=ON
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build
+        run: cmake --build build --config ${{ matrix.build_type }}
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure -C ${{ matrix.build_type }}
+
+  # ── Lint (clang-format + clang-tidy + cppcheck) ──────────────────────────
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: clang-format check (C++ sources)
+        uses: jidicula/clang-format-action@v4.14.0
+        with:
+          clang-format-version: '17'
+          check-path: 'src/Cpp'
+
+      - name: clang-format check (headers)
+        uses: jidicula/clang-format-action@v4.14.0
+        with:
+          clang-format-version: '17'
+          check-path: 'include'
+
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "~3.31.0"
+          ninjaVersion: "^1.12.1"
+
+      - name: Configure for analysis
+        run: >
+          cmake -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: clang-tidy
+        run: |
+          sudo apt-get install -y clang-tidy
+          run-clang-tidy -p build -header-filter='include/inputs/.*' src/Cpp/
+
+      - name: cppcheck
+        run: |
+          sudo apt-get install -y cppcheck
+          cppcheck --enable=all --error-exitcode=1 \
+            --suppress=missingIncludeSystem \
+            --suppress=unusedFunction \
+            --suppress=unmatchedSuppression \
+            --suppress=checkersReport \
+            -I include/ src/Cpp/
+
+  # ── Sanitizers (ASan + UBSan) ─────────────────────────────────────────────
+  sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "~3.31.0"
+          ninjaVersion: "^1.12.1"
+
+      - name: Configure with sanitizers
+        run: >
+          cmake -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_CXX_COMPILER=g++
+          -DATOM_INPUTS_BUILD_TESTS=ON
+          -DATOM_INPUTS_ENABLE_ASAN=ON
+          -DATOM_INPUTS_ENABLE_UBSAN=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test with sanitizers
+        run: ctest --test-dir build --output-on-failure
+        env:
+          ASAN_OPTIONS: "detect_leaks=1:halt_on_error=1"
+          UBSAN_OPTIONS: "print_stacktrace=1:halt_on_error=1"
+
+  # ── Coverage ──────────────────────────────────────────────────────────────
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "~3.31.0"
+          ninjaVersion: "^1.12.1"
+
+      - name: Install lcov
+        run: sudo apt-get install -y lcov
+
+      - name: Configure with coverage
+        run: >
+          cmake -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_CXX_COMPILER=g++
+          -DATOM_INPUTS_BUILD_TESTS=ON
+          -DATOM_INPUTS_ENABLE_COVERAGE=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Generate coverage report
+        run: |
+          lcov --capture --directory build --output-file coverage.info --ignore-errors unused
+          lcov --remove coverage.info '*/tests/*' --output-file coverage.info --ignore-errors unused
+          lcov --list coverage.info --ignore-errors unused
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.info
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
