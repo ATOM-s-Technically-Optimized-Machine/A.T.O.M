@@ -1,14 +1,16 @@
 # Contributing to A.T.O.M
 
-A.T.O.M (ATOM's Technically Optimized Machine) is a multi-repo game engine. This document covers the workflow and commit conventions contributors should follow.
+A.T.O.M (ATOM's Technically Optimized Machine) is a game engine developed in a single repository. This document covers the workflow and commit conventions contributors should follow.
 
 ---
 
 ## Repository Structure
 
-This is the **main repo**. It assembles all subsystems via Git submodules and is the authoritative mirror sent to the university.
+This is the **main repo** and the authoritative mirror sent to the university. Every engine module lives here as a regular directory under `modules/`, and all development happens in this repository.
 
-Day-to-day development happens **in the sub-repos**. The main repo is updated when sub-repo changes need to be integrated.
+The only exception is the ECS, [Blob-ECS](https://github.com/guilec06/Blob-ECS), which is an independent project included as a Git submodule at `modules/core/include/core/ECS` (see [The Blob-ECS submodule](#the-blob-ecs-submodule)).
+
+Building and running is described in the [README](README.md).
 
 ---
 
@@ -22,7 +24,7 @@ cd A.T.O.M
 If you already cloned without submodules:
 
 ```bash
-git submodule update --init --recursive
+git submodule update --init
 ```
 
 ---
@@ -31,186 +33,55 @@ git submodule update --init --recursive
 
 > **Note:** The workflow is not finalized yet. This section will be updated as new workflows are decided upon.
 
-### Working on a subsystem
-
 Work in a branch, not directly on `main`:
 
 ```bash
-cd modules/<subsystem>/
 git checkout -b feat/<description>
-# make changes
+# make changes, in any number of modules
 git commit -m "feat(<scope>): <description>"
 git push origin feat/<description>
-# open a PR to merge into the subsystem's main when ready
-```
-
-### Updating a submodule reference in the main repo
-
-The main repo pin **does not need to be updated after every submodule commit**. Update it only when a set of changes is ready to be integrated — typically after a subsystem PR is merged.
-
-```bash
-cd modules/<subsystem>
-git pull origin main
-cd ../..
-git add modules/<subsystem>
-git commit -m "build(deps): update <subsystem> to vX.Y.Z
-
-Brief summary of what changed.
-Refs: <subsystem-repo> vX.Y.Z"
-git push origin build/update-<subsystem>
 # open a PR — only integrators merge into main
 ```
 
----
-
-## Submodule Memo
-
-All subsystems live under `modules/` as Git submodules. The main repo tracks a **pinned commit SHA** for each submodule — not a branch.
-
-Three rules to always keep in mind:
-- **Never push directly to `main`** — in any repo, submodule or main. Always work in a branch and open a PR. Only designated integrators merge into `main`.
-- **The main repo pin does not need to reflect every submodule commit.** Only bump it when a feature or fix is ready to be integrated.
+Rules to always keep in mind:
+- **Never push directly to `main`.** Always work in a branch and open a PR. Only designated integrators merge into `main`.
 - **All changes go through PRs.** No exceptions, regardless of how small the change is.
 
-### Check submodule status
-
-```bash
-git submodule status
-```
-
-Each line shows the pinned commit SHA, the path, and the tag if any. A `+` prefix means the checked-out commit differs from what the main repo pins.
-
 ---
 
-### Clone with submodules
+## The Blob-ECS submodule
+
+The repository pins a **commit SHA** of Blob-ECS, not a branch. A `+` prefix in `git submodule status` means the checked-out commit differs from the pinned one.
+
+### Sync after someone else updated the pin
 
 ```bash
-git clone --recurse-submodules git@github.com:ATOM-s-Technically-Optimized-Machine/A.T.O.M.git
+git pull
+git submodule update
 ```
 
-Already cloned without submodules:
+`git submodule update` (without `--remote`) checks out the **pinned commit**, which is what you want when syncing.
+
+### Change the ECS
+
+Changes to the ECS are made in the Blob-ECS repository, then the pin is bumped here:
 
 ```bash
-git submodule update --init --recursive
+cd modules/core/include/core/ECS
+git checkout -b <branch>
+# make your changes, commit, push, merge in Blob-ECS
+git checkout main && git pull
+
+cd -   # back to the repo root
+git checkout -b build/bump-blob-ecs
+git add modules/core/include/core/ECS
+git commit -m "build(deps): bump Blob-ECS to <short-sha>"
+# open a PR
 ```
 
----
+To pick up the latest Blob-ECS `main` without changing it: `git submodule update --remote modules/core/include/core/ECS`, then commit the new pin the same way.
 
-### Work on a submodule
-
-```bash
-cd modules/<subsystem>
-git checkout -b feat/<description>
-# make your changes
-git add <files>
-git commit -m "feat(<scope>): <description>"
-git push origin feat/<description>
-# open a PR — do not push directly to main
-```
-
-Once the PR is merged and you are ready to integrate into the main repo:
-
-```bash
-cd modules/<subsystem>
-git checkout main && git pull origin main
-
-# back in the main repo, update the pin in a branch
-cd ../..
-git checkout -b build/bump-<subsystem>
-git add modules/<subsystem>
-git commit -m "build(deps): bump <subsystem>"
-git push origin build/bump-<subsystem>
-# open a PR — only integrators merge into main
-```
-
-The pin update to the main repo is a separate, deliberate step — not something that happens automatically after every submodule commit.
-
----
-
-### Pull latest changes from a submodule remote
-
-```bash
-# update one submodule to its remote's latest commit
-git submodule update --remote modules/<subsystem>
-
-# update all submodules at once
-git submodule update --remote
-```
-
-Only bump the pin in the main repo when the update is intentional and ready to integrate:
-
-```bash
-git checkout -b build/update-<subsystem>
-git add modules/<subsystem>
-git commit -m "build(deps): update <subsystem> to latest"
-git push origin build/update-<subsystem>
-# open a PR — only integrators merge into main
-```
-
----
-
-### Revert the main repo to a previous submodule pin
-
-Use this when you want the main repo to point to an older commit of a submodule without touching the submodule's own history.
-
-```bash
-# find the main repo commit where the submodule was at the right state
-git log --oneline
-
-# create a branch for the revert
-git checkout -b revert/pin-<subsystem>
-
-# restore that commit's version of the submodule pin
-git checkout <main-repo-commit-sha> -- modules/<subsystem>
-
-# verify the submodule now points to the right commit
-git submodule status
-
-# commit the reverted pin and open a PR
-git add modules/<subsystem>
-git commit -m "revert(deps): pin <subsystem> back to <commit-sha>"
-git push origin revert/pin-<subsystem>
-# open a PR — only integrators merge into main
-```
-
----
-
-### Revert a submodule to a previous commit
-
-Use this when you need to undo changes inside a submodule itself.
-
-```bash
-cd modules/<subsystem>
-
-# find the bad commit to revert
-git log --oneline
-
-# create a branch and revert the bad commit (never force-push shared branches)
-git checkout -b revert/<bad-commit-sha>
-git revert <bad-commit-sha>
-git push origin revert/<bad-commit-sha>
-# open a PR in the submodule repo — only integrators merge into main
-
-# once merged, pull main and update the pin in the main repo
-git checkout main && git pull origin main
-cd ../..
-git checkout -b revert/pin-<subsystem>
-git add modules/<subsystem>
-git commit -m "revert(deps): revert <subsystem> to <commit-sha>"
-git push origin revert/pin-<subsystem>
-# open a PR — only integrators merge into main
-```
-
----
-
-### Sync after someone else updated a submodule pin
-
-```bash
-git pull origin main
-git submodule update --recursive
-```
-
-`git submodule update` (without `--remote`) checks out the **pinned commit** recorded in the main repo, not the latest remote — which is the correct behavior when syncing.
+The submodule URL is HTTPS so anyone (and CI) can clone it. To push over SSH from inside the submodule: `git remote set-url --push origin git@github.com:guilec06/Blob-ECS.git`.
 
 ---
 
@@ -283,9 +154,8 @@ BREAKING CHANGE: Script::init() now takes a Context reference instead of raw poi
 
 ## Versioning
 
-- Each sub-repo is versioned independently (e.g. `core-v0.2.1`, `renderer-v0.1.3`).
-- The main repo carries the engine-level version (e.g. `v0.1.0`).
-- `CHANGELOG.md` in the main repo records which sub-repo versions each engine release includes.
+- The engine carries a single version for all modules (e.g. `v0.1.0`), recorded in `CHANGELOG.md`.
+- Blob-ECS is versioned in its own repository; `CHANGELOG.md` records which Blob-ECS commit each engine release pins.
 
 ---
 
