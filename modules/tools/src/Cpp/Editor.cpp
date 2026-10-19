@@ -125,6 +125,10 @@ int Editor::spawnView(const std::string &name)
 {
     for (auto &entry : m_registry) {
         if (entry.name == name) {
+            if (entry.unique_view && getViews(name).size() != 0) {
+                std::cerr << "Cannot spawn view. Panel is marked as 'unique' and a view to this panel already exists." << std::endl;
+                return -1;
+            }
             int view_id = m_ids++;
             m_views[view_id] = {
                 .id = (std::size_t)view_id,
@@ -145,6 +149,17 @@ void Editor::killView(int id)
         return;
     it->second.panel.lock()->onViewClose(id);
     m_views.erase(it);
+}
+
+std::vector<int> Editor::getViews(const std::string &name)
+{
+    std::vector<int> ids;
+
+    for (auto &entry : m_views) {
+        if (entry.second.name == name)
+            ids.push_back(entry.second.id);
+    }
+    return ids;
 }
 
 std::shared_ptr<IPanel> Editor::getPanel(const std::string &name)
