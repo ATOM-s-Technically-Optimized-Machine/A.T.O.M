@@ -11,6 +11,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# ---- Output layout ----
+# Every executable (atom-editor, atom-demo, ...) lands in <build-dir>/bin/,
+# e.g. build/dev/bin/atom-editor, instead of deep inside the module tree.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
 # ---- Common dependencies ----
 include(FetchContent)
 
