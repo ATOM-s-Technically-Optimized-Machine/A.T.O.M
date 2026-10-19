@@ -26,6 +26,8 @@ class SceneViewerPanel : public APanel {
 
         void onViewClose(int view_id) override;
 
+        static constexpr bool ViewUnique = true;
+
     protected:
     private:
         ECS::ECS &m_ecs;

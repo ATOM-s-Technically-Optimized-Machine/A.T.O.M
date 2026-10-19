@@ -5,6 +5,7 @@
 #include "resources/ResourceManager.hpp"
 #include "tools/panels/IPanel.hpp"
 #include <memory>
+#include <concepts>
 
 struct GLFWwindow;
 namespace editor {
@@ -22,7 +23,22 @@ struct PanelRegistryEntry {
     std::string name;
     std::string lowercase_name;
     std::shared_ptr<IPanel> panel;
+    bool unique_view;
 };
+
+template<typename T>
+concept HasUniqueFlag = requires {
+    T::ViewUnique;
+    { T::ViewUnique } -> std::convertible_to<bool>;
+};
+
+template<typename T>
+bool ViewShouldBeUnique() {
+    if constexpr (HasUniqueFlag<T>)
+        return T::ViewUnique;
+    else
+        return false;
+}
 
 class Editor {
     public:
@@ -35,6 +51,7 @@ class Editor {
 
         int spawnView(const std::string &name);
         void killView(int id);
+        std::vector<int> getViews(const std::string &name);
 
         template<PanelClass T, typename... Args>
             requires std::constructible_from<T, editor::Editor &, Args...>
@@ -60,7 +77,8 @@ class Editor {
             m_registry.push_back({
                 .name = std::move(name),
                 .lowercase_name = std::move(l_name),
-                .panel = std::move(ptr)
+                .panel = std::move(ptr),
+                .unique_view = ViewShouldBeUnique<T>()
             });
 
             return static_cast<T&>(ref);
