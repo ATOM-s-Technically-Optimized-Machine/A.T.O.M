@@ -1,0 +1,122 @@
+#include <renderer/glad/glad.h>
+#include "renderer/Renderer.hpp"
+#include "renderer/stb_image.h"
+#include "resources/ResourceTypes.hpp"
+#include <fstream>
+#include <iterator>
+#include <iostream>
+
+namespace renderer {
+
+unsigned int loadShaderProgram(
+    const std::string &vertPath,
+    const std::string &fragPath,
+    const std::string &defines
+) {
+    std::ifstream vert_stream(vertPath);
+    std::ifstream frag_stream(fragPath);
+
+    std::string vert_content((std::istreambuf_iterator<char>(vert_stream)), std::istreambuf_iterator<char>());
+    std::string frag_content((std::istreambuf_iterator<char>(frag_stream)), std::istreambuf_iterator<char>());
+
+    auto injectDefines = [&](const std::string &src) {
+        if (defines.empty()) return src;
+        size_t nl = src.find('\n');
+        if (nl == std::string::npos) return src + defines;
+        return src.substr(0, nl + 1) + defines + src.substr(nl + 1);
+    };
+
+    std::string vert_shader = injectDefines(vert_content);
+    std::string frag_shader = injectDefines(frag_content);
+
+    const char *vert_raw = vert_shader.c_str();
+    const char *frag_raw = frag_shader.c_str();
+
+    int success;
+    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vert_raw, NULL);
+    glCompileShader(vertexShader);
+
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        char log[512];
+        glGetShaderInfoLog(vertexShader, 512, NULL, log);
+        std::cerr << "Shader error: " << log << std::endl;
+    }
+
+    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &frag_raw, NULL);
+    glCompileShader(fragmentShader);
+
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        char log[512];
+        glGetShaderInfoLog(fragmentShader, 512, NULL, log);
+        std::cerr << "Shader error: " << log << std::endl;
+    }
+
+    unsigned int shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    return shaderProgram;
+}
+
+unsigned int loadTextureFromImageData(const resources::ImageData &data)
+{
+    unsigned int tex;
+
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+
+    GLenum format = GL_RGB;
+
+    if (data.channels == 1)
+        format = GL_RED;
+    else if (data.channels == 3)
+        format = GL_RGB;
+    else if (data.channels == 4)
+        format = GL_RGBA;
+
+    glTexImage2D(GL_TEXTURE_2D, 0, format, data.width, data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, data.pixels.data());
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    return tex;
+}
+
+unsigned int loadTexture(const std::string &textPath)
+{
+    int w, h, channels;
+    unsigned char *data = stbi_load(textPath.c_str(), &w, &h, &channels, 0);
+    unsigned int tex;
+
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+
+    if (!data) {
+        std::cerr << "Failed to load texture: " << textPath << std::endl;
+        glDeleteTextures(1, &tex);
+        return 0;
+    }
+
+    GLenum format = GL_RGB;
+
+    if (channels == 1)
+        format = GL_RED;
+    else if (channels == 3)
+        format = GL_RGB;
+    else if (channels == 4)
+        format = GL_RGBA;
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(data);
+
+    return tex;
+}
+
+}
