@@ -23,8 +23,11 @@
 #ifndef INCLUDES_HPP_
 #define INCLUDES_HPP_
 
+#include <bitset>
 #include <cstdint>
+#include <limits>
 #include <type_traits>
+#include <vector>
 
 namespace ECS
 {
@@ -39,8 +42,13 @@ concept SystemClass = std::is_base_of_v<ISystem, T>;
 template <typename T>
 concept ComponentType = std::is_default_constructible_v<T>;
 
+template<typename T>
+concept TagType = std::is_empty_v<T>;
+
 // Alias for uint32_t, used to represent, locate and perform actions on entities
 using EntityID = uint32_t;
+
+constexpr EntityID NULL_ENTITY = std::numeric_limits<EntityID>::max();
 
 // Alias for uint16_t, used to represent a System within the ECS
 using SystemID = uint16_t;
@@ -52,9 +60,18 @@ struct SystemEntry {
     SysPriority priority;
 };
 
-constexpr std::size_t COMPONENT_POOL_SPARSE_DEFAULT = 20000;
-constexpr std::size_t COMPONENT_POOL_DENSE_DEFAULT = 10000;
+constexpr std::size_t COMPONENT_POOL_SPARSE_DEFAULT = 20;
+constexpr std::size_t COMPONENT_POOL_DENSE_DEFAULT = 10;
 constexpr SysPriority SYSTEM_PRIORITY_DEFAULT = 10;
+
+constexpr std::size_t COMPONENT_MASK_WIDTH = 128;
+using EntityComponentMask = std::bitset<COMPONENT_MASK_WIDTH>;
+
+struct EntityMetadata {
+    std::vector<uint16_t> generation;
+    std::vector<EntityComponentMask> component_mask;
+    std::vector<bool> alive;
+};
 
 } // namespace ECS
 

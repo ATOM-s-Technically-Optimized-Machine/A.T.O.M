@@ -111,6 +111,27 @@ class ComponentAlreadyAttached : public std::exception
   private:
     std::string message;
 };
+
+class TooManyComponentTypes : public std::exception
+{
+  public:
+    TooManyComponentTypes(std::size_t max_types)
+        : message("Cannot register more than " + std::to_string(max_types) +
+                  " component types: the entity signature mask is out of bits!")
+    {
+    }
+    ~TooManyComponentTypes()
+    {
+    }
+
+    const char *what() const noexcept override
+    {
+        return message.c_str();
+    }
+
+  private:
+    std::string message;
+};
 } // namespace ERROR
 } // namespace ECS
 

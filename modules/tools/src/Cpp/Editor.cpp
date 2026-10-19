@@ -1,5 +1,4 @@
-#include <filesystem>
-#include <memory>
+#include <cstdio>
 #include <renderer/glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -10,15 +9,14 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include "inputs/ECSIntegration.hpp"
-#include "renderer/RenderSystem.hpp"
 
 #include <iostream>
+#include <utility>
 
 using namespace editor;
 
-Editor::Editor(GLFWwindow *window, ECS::ECS &ecs, RenderSystem &render, resources::ResourceManager &manager)
-: m_ecs(ecs), m_render_sys(render), m_window(window)
+Editor::Editor(GLFWwindow *window, ECS::ECS &ecs, resources::ResourceManager &manager)
+: m_ecs(ecs), m_window(window)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -37,76 +35,122 @@ Editor::~Editor()
 
 void Editor::render()
 {
-    ImGui::Begin("Viewport");
-    ImVec2 size = ImGui::GetContentRegionAvail();
-    int w = (int)size.x, h = (int)size.y;
+    if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_P)) {
+        m_palette_open = true;
+        m_palette_buff[0] = '\0';
+    }
 
-    if (w != m_fbo_w || h != m_fbo_h) {
-        if (m_fbo) {
-            glDeleteFramebuffers(1, &m_fbo);
-            glDeleteTextures(1, &m_fbo_tex);
-            glDeleteRenderbuffers(1, &m_fbo_depth);
+    if (m_palette_open) commandPalette();
+
+    std::vector<ViewEntry> to_close;
+
+    for (auto &[id, view] : m_views) {
+        auto panel = view.panel.lock();
+        bool success = ImGui::Begin(std::string(view.name + "##" + std::to_string(id)).c_str(), &view.is_open);
+        if (!success) {
+            ImGui::End();
+            continue;
         }
-
-        m_fbo_w = w;
-        m_fbo_h = h;
-        genFBO(m_fbo_w, m_fbo_h, m_fbo, m_fbo_tex, m_fbo_depth);
-        m_render_sys.setTargetFBO(m_fbo, m_fbo_w, m_fbo_h);
-    }
-
-    ImGui::Image((ImTextureID)(intptr_t)m_fbo_tex, size, ImVec2(0, 1), ImVec2(1, 0));
-
-    bool hovered = ImGui::IsItemHovered();
-    static bool captured = false;
-
-    if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-        captured = true;
-        glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    }
-    if (!ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
-        if (captured) {
-            glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
-        captured = false;
-    }
-
-    std::vector<ECS::EntityID> cameras;
-    m_ecs.getEntitiesByComponentsAllOf<Atom::Input::CameraComponent>(cameras);
-    ECS::EntityID cam_id = cameras[0];
-    auto &cam = m_ecs.entityGetComponent<Atom::Input::CameraComponent>(cam_id);
-    cam.enabled = captured ? true : hovered;
-
-    ImGui::End();
-
-    for (auto &win : m_sub_windows) {
-        ImGui::Begin(win->name());
-        win->render();
-        if (ImGui::BeginPopupContextWindow("##ctx")) {
-            win->contextMenu();
+        bool captures = panel->capturesMouse();
+        panel->render(id);
+        if (!captures && ImGui::BeginPopupContextWindow("##ctx")) {
+            panel->contextMenu(id);
             ImGui::EndPopup();
         }
         ImGui::End();
     }
+
+    for (auto &[id, view] : m_views)
+        if (!view.is_open)
+            to_close.push_back(view);
+
+    for (auto &view : to_close)
+        killView(view.id);
 }
 
-void Editor::renderDirTree(const std::filesystem::path &path)
+void Editor::commandPalette()
 {
-    for (auto &entry : std::filesystem::directory_iterator(path)) {
-        auto name = entry.path().filename().string();
-        if (entry.is_directory()) {
-            if (ImGui::TreeNode(name.c_str())) {
-                renderDirTree(entry.path());
-                ImGui::TreePop();
-            }
-        } else {
-            ImGui::Text("%s", name.c_str());
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(400, 0));
+    ImGui::Begin("##palette", nullptr,
+        ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoResize
+    );
+
+    ImGui::Text("Quick command");
+
+    if (ImGui::IsWindowAppearing()) {
+        ImGui::SetKeyboardFocusHere();
+        m_palette_selected = 0;
+    }
+
+    bool text_changed = ImGui::InputText("##query", m_palette_buff, sizeof(m_palette_buff));
+    if (text_changed) m_palette_selected = 0;
+
+    std::string query(m_palette_buff);
+    std::transform(query.begin(), query.end(), query.begin(), [](unsigned char c) { return std::tolower(c); });
+
+    std::vector<std::pair<int, std::size_t>> filtered;
+    for (int i = 0; i < (int)m_registry.size(); i++) {
+        std::size_t idx = m_registry[i].lowercase_name.find(query);
+        if (idx != std::string::npos)
+            filtered.push_back(std::move(std::make_pair(i, idx)));
+    }
+    
+    if (!filtered.empty())
+        std::sort(filtered.begin(), filtered.end(), [](auto &a, auto &b) { return a.second < b.second; });
+
+    if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) m_palette_selected++;
+    if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) m_palette_selected--;
+    m_palette_selected = std::clamp(m_palette_selected, 0, std::max(0, (int)filtered.size() - 1));
+
+    for (int i = 0; i < filtered.size(); i++) {
+        bool sel = m_palette_selected == i;
+        if (ImGui::Selectable(m_registry[filtered[i].first].name.c_str(), sel)
+                || (ImGui::IsKeyPressed(ImGuiKey_Enter) && sel)) {
+            spawnView(m_registry[filtered[i].first].name);
+            m_palette_open = false;
+            m_palette_buff[0] = '\0';
         }
     }
+
+    if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_Escape)) {
+        m_palette_open = false;
+        m_palette_buff[0] = '\0';
+    }
+    ImGui::End();
 }
 
-void Editor::setAssetPath(const std::filesystem::path &path)
+int Editor::spawnView(const std::string &name)
 {
-    m_assets_path = path;
+    for (auto &entry : m_registry) {
+        if (entry.name == name) {
+            int view_id = m_ids++;
+            m_views[view_id] = {
+                .id = (std::size_t)view_id,
+                .is_open = true,
+                .name = entry.name,
+                .panel = entry.panel
+            };
+            return view_id;
+        }
+    }
+    return -1;
+}
+
+void Editor::killView(int id)
+{
+    auto it = m_views.find(id);
+    if (it == m_views.end())
+        return;
+    it->second.panel.lock()->onViewClose(id);
+    m_views.erase(it);
+}
+
+std::shared_ptr<IPanel> Editor::getPanel(const std::string &name)
+{
+    const auto &ref = std::find_if(m_registry.begin(), m_registry.end(), [name](PanelRegistryEntry &entry) { return entry.name == name; });
+    return ref != m_registry.end() ? ref->panel : nullptr;
 }
 
 void editor::genFBO(

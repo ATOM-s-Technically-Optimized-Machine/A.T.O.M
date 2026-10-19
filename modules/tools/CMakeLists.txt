@@ -16,6 +16,7 @@ add_library(imgui_lib STATIC
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
     ${imgui_SOURCE_DIR}/imgui_tables.cpp
     ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/imgui_demo.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
@@ -47,7 +48,14 @@ endif()
 add_executable(atom-editor
     src/Cpp/main.cpp
     src/Cpp/Editor.cpp
-    src/Cpp/window/AssetTreeWindow.cpp
+    src/Cpp/panels/AssetTreePanel.cpp
+    src/Cpp/panels/SceneViewerPanel.cpp
+    src/Cpp/panels/CustomizeEditorPanel.cpp
+    src/Cpp/panels/EntityHierarchyPanel.cpp
+    src/Cpp/panels/EntityViewerPanel.cpp
 )
 target_include_directories(atom-editor PRIVATE include)
+target_compile_definitions(atom-editor PRIVATE
+    ATOM_ASSET_ROOT="${CMAKE_SOURCE_DIR}"
+)
 target_link_libraries(atom-editor PRIVATE atom-tools imgui_lib)

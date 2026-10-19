@@ -132,6 +132,19 @@ template <ResourceType T> class ResourcePool : public IResourcePool
     }
 
     /**
+     * @brief Get the path the resource was loaded from
+     *
+     * @param id The resource ID
+     * @return const std::string& The resource's path, as passed to load()/scan()
+     * @throw error::ResourceNotFound => if the ID is invalid or the resource was released
+     */
+    const std::string &getPath(ResourceID id) const
+    {
+        validateId(id);
+        return m_entries[id - 1].path;
+    }
+
+    /**
      * @brief Get the resource by its file path
      *
      * @param path The file path or key for the resource

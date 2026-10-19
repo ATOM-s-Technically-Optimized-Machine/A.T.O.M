@@ -1,6 +1,7 @@
 #include <renderer/glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include "core/DefaultComponents.hpp"
 #include "core/ECS/Includes.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -14,10 +15,24 @@
 #include "resources/ResourceManager.hpp"
 #include "resources/ResourceTypes.hpp"
 #include "tools/Editor.hpp"
-#include "tools/window/AssetTreeWindow.hpp"
+#include "tools/panels/AssetTreePanel.hpp"
+#include "tools/panels/CustomizeEditorPanel.hpp"
+#include "tools/panels/EntityHierarchyPanel.hpp"
+#include "tools/panels/EntityViewerPanel.hpp"
+#include "tools/panels/SceneViewerPanel.hpp"
+#include <filesystem>
 #include <iostream>
 
 using namespace editor;
+
+// Attaches a HierarchyNode to `child` and parents it under `parent`, updating
+// both sides of the relationship. `parent` must already have a HierarchyNode.
+void attachToHierarchy(ECS::ECS &ecs, ECS::EntityID child, ECS::EntityID parent)
+{
+    auto &node = ecs.entityAddComponent<HierarchyNode>(child);
+    node.parent = parent;
+    ecs.entityGetComponent<HierarchyNode>(parent).children.push_back(child);
+}
 
 int main()
 {
@@ -50,7 +65,7 @@ int main()
     int fbo_w = 1280, fbo_h = 720;
     genFBO(fbo_w, fbo_h, fbo, fbo_tex, fbo_depth);
 
-    resources::ResourceManager manager("/home/guilec06/delivery/EIP/ATOM/main");
+    resources::ResourceManager manager(ATOM_ASSET_ROOT);
     resources::registerDefaultLoaders(manager);
     resources::ImageData default_tex = manager.get<resources::ImageData>(
         manager.load<resources::ImageData>("assets/default.png")
@@ -60,10 +75,12 @@ int main()
     ecs.registerComponent<TransformComponent>();
     ecs.registerComponent<MeshHandleComponent>();
     ecs.registerComponent<Atom::Input::CameraComponent>();
-
+    ecs.registerComponent<HierarchyNode>();
+    ecs.registerComponent<NameComponent>();
+    
     auto &render_sys = ecs.addSystem<RenderSystem>(
-        "modules/renderer/src/shaders/default.vert",
-        "modules/renderer/src/shaders/default.frag",
+        std::string(ATOM_ASSET_ROOT) + "/modules/renderer/src/shaders/default.vert",
+        std::string(ATOM_ASSET_ROOT) + "/modules/renderer/src/shaders/default.frag",
         window,
         default_tex
     );
@@ -80,14 +97,20 @@ int main()
     ecs.systemSetPriority<Atom::Input::CameraECSSystem>(1);
     ecs.systemSetPriority<RenderSystem>(3);
 
+    ECS::EntityID world_entity = ecs.entityCreate();
+    auto &world_node = ecs.entityAddComponent<HierarchyNode>(world_entity);
+    ecs.entityAddComponent<NameComponent>(world_entity, "World");
+    world_node.parent = ECS::NULL_ENTITY;
+
     ECS::EntityID cam_entity = ecs.entityCreate();
     auto &cam = ecs.entityAddComponent<Atom::Input::CameraComponent>(cam_entity);
+    ecs.entityAddComponent<NameComponent>(cam_entity, "Camera");
     cam.camera.setPerspective(70.0f, (float)fbo_w / fbo_h, 0.1f, 500.0f);
     cam.camera.setPosition(glm::vec3(0.0f, 2.0f, 5.0f));
     cam.fpsBindings.lookButton = Atom::Input::MouseButton::Right;
+    attachToHierarchy(ecs, cam_entity, world_entity);
 
-    Editor editor(window, ecs, render_sys, manager);
-    editor.setAssetPath("assets/");
+    Editor editor(window, ecs, manager);
 
     resources::ResourceID texture_resource_id = manager.load<resources::ImageData>("assets/kenney_holiday-kit/Models/OBJ format/Textures/colormap.png");
     manager.scan<resources::MeshData>("assets/kenney_holiday-kit/Models/OBJ format", {".obj"});
@@ -126,9 +149,28 @@ int main()
             glm::radians(static_cast<float>(std::rand() % 360)),
             0.0f
         ));
+
+        std::string mesh_name = std::filesystem::path(mesh_pool.getPath(r)).stem().string();
+        ecs.entityAddComponent<NameComponent>(e, mesh_name);
+        attachToHierarchy(ecs, e, world_entity);
     }
 
-    editor.addWindow<AssetTreeWindow>("assets/");
+    editor.registerPanel<AssetTreePanel>("Assets", "assets/");
+    editor.registerPanel<SceneViewerPanel>("Scene", window, ecs);
+    editor.registerPanel<CustomizeEditorPanel>("Theme editor");
+    editor.registerPanel<EntityHierarchyPanel>("Scene Hierarchy", ecs);
+    auto &e_viewer = editor.registerPanel<EntityViewerPanel>("Entity viewer", ecs);
+
+    e_viewer.inspector().registerInspector<TransformComponent>(
+        [](ComponentDescriptor &buff, void *raw)
+        {
+            TransformComponent &data = *static_cast<TransformComponent*>(raw);
+            buff.name = "Transform";
+            buff.fields.push_back({.name = "position", .type = FieldType::Vec3, .ptr = &data.position});
+            buff.fields.push_back({.name = "rotation", .type = FieldType::Quat, .ptr = &data.rotation});
+            buff.fields.push_back({.name = "scale", .type = FieldType::Vec3, .ptr = &data.scale});
+        }
+    );
 
     float prev_time = 0.0f;
     while (!glfwWindowShouldClose(window)) {

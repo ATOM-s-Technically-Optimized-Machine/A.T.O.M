@@ -199,6 +199,20 @@ class ResourceManager
     }
 
     /**
+     * @brief Get the path a resource was loaded from
+     *
+     * @tparam T The resource type
+     * @param id The resource ID
+     * @return const std::string& The resource's path, as passed to load()/scan()
+     * @throw error::UnregisteredResource => if the resource type isn't registered
+     * @throw error::ResourceNotFound => if the ID is invalid or released
+     */
+    template <ResourceType T> const std::string &getPath(ResourceID id)
+    {
+        return pool<T>().getPath(id);
+    }
+
+    /**
      * @brief Get a resource by its file path
      *
      * @tparam T The resource type

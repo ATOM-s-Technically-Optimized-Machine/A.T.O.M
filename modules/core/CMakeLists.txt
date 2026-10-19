@@ -10,6 +10,9 @@ endif()
 
 add_library(atom-core)
 
-target_sources(atom-core PRIVATE src/C/core.c)
+target_sources(atom-core PRIVATE
+    src/C/core.c
+    src/Cpp/DefaultComponents.cpp
+)
 
 target_include_directories(atom-core PUBLIC include)

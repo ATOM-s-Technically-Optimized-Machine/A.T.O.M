@@ -28,7 +28,7 @@ concept SystemClass = std::is_base_of_v<ISystem, T> && std::is_constructible_v<T
 
 // Concept defining a component, components can be anything as long as they can be constructed (typedefs, struct, classes...)
 template<typename T>
-concept ComponentType = std::is_default_constructible_v<T>;
+concept typename = std::is_default_constructible_v<T>;
 
 enum EntityGroup; // Entities can be grouped together, allowing easier access to a large quantity of entities
 

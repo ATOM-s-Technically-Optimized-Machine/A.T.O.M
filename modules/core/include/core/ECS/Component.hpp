@@ -30,6 +30,7 @@
 #include <atomic>
 #include <cstdint>
 #include <limits>
+#include <type_traits>
 #include <vector>
 
 namespace ECS
@@ -38,7 +39,7 @@ namespace ECS
 /**
  * @brief Class for generating and getting custom type IDs
  */
-class ComponentTypeId
+class typenameId
 {
   private:
     inline static std::atomic<uint16_t> runtime_counter = 0;
@@ -65,8 +66,8 @@ class ComponentTypeId
  */
 template <typename T> struct DenseComponent
 {
-    T component;
-    EntityID entity;
+    std::vector<T> components;
+    std::vector<EntityID> entities;
 };
 
 /**
@@ -76,7 +77,7 @@ template <typename T> struct DenseComponent
  */
 template <typename T> struct SparseSetData
 {
-    std::vector<DenseComponent<T>> dense_components; // Packed components
+    DenseComponent<T> dense_components; // Packed components - SoA
     std::vector<uint32_t> sparse;                    // EntityID -> dense index mapping
 };
 constexpr uint32_t NULL_INDEX = std::numeric_limits<uint32_t>::max();
@@ -88,7 +89,13 @@ class IComponentPool
 {
   public:
     virtual ~IComponentPool() = default;
-    virtual void disableEntity(EntityID) = 0;
+
+    virtual bool hasComponent(EntityID id) const = 0;
+    virtual void removeComponent(EntityID) = 0;
+    virtual const std::vector<EntityID> &getActiveEntities() = 0;
+    virtual std::size_t size() const = 0;
+    virtual void *getVoid(EntityID e) = 0;
+    virtual bool poolIsTag() const = 0;
 };
 
 /**
@@ -96,12 +103,13 @@ class IComponentPool
  *
  * @tparam T The type of component the pool is storing
  */
-template <typename T> class ComponentPool : public IComponentPool
+template <typename T, bool isTag = std::is_empty_v<T>> class ComponentPool : public IComponentPool
 {
   public:
-    ComponentPool() : m_cache_dirty(true)
+    ComponentPool() : m_cache_dirty(true), m_size(0)
     {
-        m_data.dense_components.reserve(COMPONENT_POOL_DENSE_DEFAULT);
+        m_data.dense_components.components.reserve(COMPONENT_POOL_DENSE_DEFAULT);
+        m_data.dense_components.entities.reserve(COMPONENT_POOL_DENSE_DEFAULT);
         m_data.sparse.reserve(COMPONENT_POOL_SPARSE_DEFAULT);
     }
 
@@ -116,35 +124,9 @@ template <typename T> class ComponentPool : public IComponentPool
      * @return true The entity has the component
      * @return false The entity does not have the component
      */
-    bool hasComponent(EntityID e)
+    bool hasComponent(EntityID e) const override
     {
         return e < m_data.sparse.size() && m_data.sparse[e] != NULL_INDEX;
-    }
-
-    /**
-     * @brief Adds the component to the specified entity
-     *
-     * @param e The entity ID
-     * @return T& Reference to the newly created component
-     */
-    T &addComponent(EntityID e)
-    {
-        if (hasComponent(e))
-            throw ERROR::ComponentAlreadyAttached(e, std::string(typeid(T).name()));
-
-        if (e >= m_data.sparse.size())
-            sparseGrow(e);
-
-        uint32_t new_dense_index = static_cast<uint32_t>(m_data.dense_components.size());
-        m_data.dense_components.push_back({
-            T(),
-            e
-        });
-
-        m_data.sparse[e] = new_dense_index;
-
-        m_cache_dirty = true;
-        return m_data.dense_components.back().component;
     }
 
     template <typename... Args>
@@ -157,15 +139,16 @@ template <typename T> class ComponentPool : public IComponentPool
         if (e >= m_data.sparse.size())
             sparseGrow(e);
         
-        uint32_t new_dense_index = static_cast<uint32_t>(m_data.dense_components.size());
-        m_data.dense_components.push_back({
-            T(std::forward<Args>(args)...),
-            e
+        uint32_t new_dense_index = static_cast<uint32_t>(m_data.dense_components.components.size());
+        m_data.dense_components.components.push_back({
+            T(std::forward<Args>(args)...)
         });
+        m_data.dense_components.entities.push_back(e);
 
         m_data.sparse[e] = new_dense_index;
         m_cache_dirty = true;
-        return m_data.dense_components.back().component;
+        m_size++;
+        return m_data.dense_components.components.back();
     }
 
     /**
@@ -173,23 +156,27 @@ template <typename T> class ComponentPool : public IComponentPool
      *
      * @param e The entity ID
      */
-    void removeComponent(EntityID e)
+    void removeComponent(EntityID e) override
     {
         if (!hasComponent(e))
             return;
 
         uint32_t dense_index = m_data.sparse[e];
-        uint32_t last_index = static_cast<uint32_t>(m_data.dense_components.size() - 1);
+        uint32_t last_index = static_cast<uint32_t>(m_data.dense_components.components.size() - 1);
 
         if (dense_index != last_index)
         {
-            m_data.dense_components[dense_index] = std::move(m_data.dense_components[last_index]);
+            m_data.dense_components.components[dense_index] = std::move(m_data.dense_components.components[last_index]);
+            m_data.dense_components.entities[dense_index] = m_data.dense_components.entities[last_index];
+            m_data.dense_components.entities.pop_back();
 
-            EntityID moved_entity = m_data.dense_components[dense_index].entity;
+            EntityID moved_entity = m_data.dense_components.entities[dense_index];
             m_data.sparse[moved_entity] = dense_index;
+            m_size--;
         }
 
-        m_data.dense_components.pop_back();
+        m_data.dense_components.components.pop_back();
+        m_data.dense_components.entities.pop_back();
 
         m_data.sparse[e] = NULL_INDEX;
 
@@ -205,7 +192,7 @@ template <typename T> class ComponentPool : public IComponentPool
     T &getComponent(EntityID e)
     {
 
-        return m_data.dense_components[m_data.sparse[e]].component;
+        return m_data.dense_components.components[m_data.sparse[e]];
     }
 
     /**
@@ -213,56 +200,142 @@ template <typename T> class ComponentPool : public IComponentPool
      *
      * @return const std::vector<EntityID>& Vector of entities
      */
-    const std::vector<EntityID> &getActiveEntities()
+    const std::vector<EntityID> &getActiveEntities() override
     {
-        if (m_cache_dirty)
-        {
-            m_cached_entities.clear();
-            m_cached_entities.reserve(m_data.dense_components.size());
-            for (const auto &dc : m_data.dense_components)
-                m_cached_entities.push_back(dc.entity);
-            std::sort(m_cached_entities.begin(), m_cached_entities.end());
+        if (m_cache_dirty) {
+            m_cached_entities = m_data.dense_components.entities;
             m_cache_dirty = false;
         }
         return m_cached_entities;
     }
 
-    /**
-     * @brief Alias for removeComponent(e)
-     *
-     * @param e The entity ID
-     */
-    void disableEntity(EntityID e) override
+
+    DenseComponent<T> &getData()
     {
-        removeComponent(e);
+        return m_data.dense_components;
     }
 
-    /**
-     * @brief Get the Pool object
-     *
-     * @return const std::vector<EntityID>&
-     */
-    const std::vector<EntityID> &getPool()
+    std::size_t size() const override
     {
-        return getActiveEntities();
+        return m_size;
+    }
+    
+    void *getVoid(EntityID e) override
+    {
+        if (e >= m_data.sparse.size())
+            return nullptr;
+        if (m_data.sparse[e] == NULL_INDEX)
+            return nullptr;
+        return &m_data.dense_components.components[m_data.sparse[e]];
+    }
+
+    bool poolIsTag() const override
+    {
+        return false;
     }
 
   private:
     SparseSetData<T> m_data;
     std::vector<EntityID> m_cached_entities;
     bool m_cache_dirty;
+    std::size_t m_size;
 
     void sparseGrow(EntityID new_standard)
     {
         std::size_t curr_size = m_data.sparse.size();
         if (curr_size == 0)
             curr_size = 8192;
-        else
-            while (curr_size <= new_standard)
-                curr_size <<= 1;
+        while (curr_size <= new_standard)
+            curr_size <<= 1;
         m_data.sparse.resize(curr_size, NULL_INDEX);
     }
 };
+
+template<typename T>
+class ComponentPool<T, true> : public IComponentPool {
+    public:
+        ComponentPool()
+        {
+        }
+
+        ~ComponentPool()
+        {
+        }
+
+        bool hasComponent(EntityID e) const override
+        {
+            return e < m_data.size() && m_data[e];
+        }
+
+        void addComponent(EntityID e)
+        {
+            if (hasComponent(e))
+                throw ERROR::ComponentAlreadyAttached(e, std::string(typeid(T).name()));
+
+            if (e >= m_data.size())
+                grow(e);
+            m_data[e] = true;
+            m_cache_dirty = true;
+            m_size++;
+        }
+
+        void removeComponent(EntityID e) override
+        {
+            if (e < m_data.size()) {
+                m_cache_dirty |= m_data[e];
+                m_size -= m_data[e];
+                m_data[e] = false;
+            }
+        }
+
+        const std::vector<EntityID> &getActiveEntities() override
+        {
+            if (m_cache_dirty)
+            {
+                m_cached_entities.clear();
+                m_cached_entities.reserve(m_data.size());
+                for (std::size_t i = 0; i < m_data.size(); i++) {
+                    if (m_data[i])
+                        m_cached_entities.push_back(i);
+                }
+                m_cache_dirty = false;
+            }
+            return m_cached_entities;
+        }
+
+        std::size_t size() const override
+        {
+            return m_size;
+        }
+
+        void *getVoid(EntityID e) override
+        {
+            return nullptr;
+        }
+
+        bool poolIsTag() const override
+        {
+            return true;
+        }
+
+    private:
+        std::vector<bool> m_data;
+        std::vector<EntityID> m_cached_entities;
+        bool m_cache_dirty = true;
+        std::size_t m_size;
+
+        void grow(std::size_t new_standard)
+        {
+            std::size_t curr_size = m_data.size();
+            if (curr_size == 0)
+                curr_size = 8192;
+            while (curr_size <= new_standard)
+                curr_size <<= 1;
+            m_data.resize(curr_size, false);
+        }
+
+};
+
 } // namespace ECS
 
 #endif /* !COMPONENT_HPP_ */
