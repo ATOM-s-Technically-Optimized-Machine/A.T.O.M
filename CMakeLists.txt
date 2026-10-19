@@ -26,7 +26,7 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/glfw/glfw.git
     GIT_TAG        3.4
     GIT_SHALLOW    TRUE
-    FIND_PACKAGE_ARGS
+    FIND_PACKAGE_ARGS NAMES glfw3
 )
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
