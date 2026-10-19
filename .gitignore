@@ -51,3 +51,9 @@ compile_commands.json
 
 # Editor
 .vscode/
+
+# Assets - Don't push assets !!
+assets/*
+
+# Local sandbox benchmarks - not part of the project
+/bench/

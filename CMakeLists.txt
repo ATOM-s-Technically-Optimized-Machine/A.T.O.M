@@ -54,3 +54,10 @@ foreach(mod IN LISTS ATOM_MODULES)
         message(STATUS "Skipping module '${mod}' — no CMakeLists.txt")
     endif()
 endforeach()
+
+# ---- Demos ----
+option(ATOM_BUILD_DEMOS "Build project-wide demo" OFF)
+
+if(ATOM_BUILD_DEMOS)
+    add_subdirectory(demo)
+endif()
