@@ -1,0 +1,3 @@
+[submodule "Blob-ECS"]
+	path = modules/core/include/core/ECS
+	url = https://github.com/guilec06/Blob-ECS.git

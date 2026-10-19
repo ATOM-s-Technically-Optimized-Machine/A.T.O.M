@@ -25,7 +25,7 @@ class InspectorRegistry {
         template<typename T>
         void registerInspector(InspectorFn fn)
         {
-            m_registry[ECS::typenameId::get<T>()] = std::move(fn);
+            m_registry[ECS::ComponentTypeId::get<T>()] = std::move(fn);
         }
 
         std::unordered_map<uint16_t, InspectorFn> &registry();
