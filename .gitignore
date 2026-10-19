@@ -19,6 +19,7 @@
 
 # Compiled Dynamic libraries
 *.so
+*.so.*
 *.dylib
 *.dll
 
@@ -36,9 +37,20 @@
 *.exe
 *.out
 *.app
+*.elf
+*.i*86
+*.x86_64
+*.hex
+
+# Linker output
+*.map
+*.exp
 
 # debug information files
 *.dwo
+*.dSYM/
+*.su
+*.idb
 
 # CMake
 build/
@@ -51,6 +63,10 @@ compile_commands.json
 
 # Editor
 .vscode/
+imgui.ini
+
+# macOS
+.DS_Store
 
 # Assets - Don't push assets !!
 assets/*
