@@ -16,3 +16,7 @@ target_sources(atom-core PRIVATE
 )
 
 target_include_directories(atom-core PUBLIC include)
+
+# DefaultComponents.hpp uses GLM, including the experimental gtx extensions
+target_link_libraries(atom-core PUBLIC glm::glm)
+target_compile_definitions(atom-core PUBLIC GLM_ENABLE_EXPERIMENTAL)
