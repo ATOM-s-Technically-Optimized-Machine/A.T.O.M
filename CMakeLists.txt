@@ -40,6 +40,10 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(glm glfw)
 
 # ---- Modules ----
+# atom-editor (modules/tools) drives the inputs module through its GLFW bridge,
+# so the bridge is always built. Must be set before modules/inputs is added.
+set(ATOM_INPUT_USE_GLFW ON)
+
 set(ATOM_MODULES
     core
     ressources

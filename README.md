@@ -32,7 +32,7 @@ Every executable lands in `build/<preset>/bin/`. The editor and the demo find sh
 
 | Preset    | Build dir        | Settings                                                              |
 |-----------|------------------|-----------------------------------------------------------------------|
-| `dev`     | `build/dev/`     | Debug, `-g3`, AddressSanitizer + UndefinedBehaviorSanitizer, demos, GLFW input bridge |
+| `dev`     | `build/dev/`     | Debug, `-g3`, AddressSanitizer + UndefinedBehaviorSanitizer, demos |
 | `release` | `build/release/` | Release; demos off                                                    |
 
 The `dev` preset exports `compile_commands.json` to `build/dev/`; symlink it to the repo root for clangd: `ln -s build/dev/compile_commands.json .`
@@ -42,7 +42,6 @@ The `dev` preset exports `compile_commands.json` to `build/dev/`; symlink it to 
 | Option                    | Default | Effect                                    |
 |---------------------------|---------|-------------------------------------------|
 | `ATOM_BUILD_DEMOS`        | `OFF`   | Build `atom-demo` (`ON` in `dev`)         |
-| `ATOM_INPUT_USE_GLFW`     | `OFF`   | Build the GLFW bridge of the inputs module (`ON` in `dev`) |
 | `ATOM_INPUTS_BUILD_TESTS` | `OFF`   | Build the inputs module unit tests        |
 
 ## Requirements
