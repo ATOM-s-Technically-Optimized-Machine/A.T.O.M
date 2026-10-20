@@ -47,8 +47,8 @@ endif()
 if(NOT TARGET atom-core AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/module-core/CMakeLists.txt")
     add_subdirectory(deps/module-core)
 endif()
-if(NOT TARGET atom-resources AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/module-ressources/CMakeLists.txt")
-    add_subdirectory(deps/module-ressources)
+if(NOT TARGET atom-resources AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/deps/module-resources/CMakeLists.txt")
+    add_subdirectory(deps/module-resources)
 endif()
 
 # ---- Library ----

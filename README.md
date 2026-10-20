@@ -61,7 +61,7 @@ The `dev` preset exports `compile_commands.json` to `build/dev/`; symlink it to 
 │   ├── core/             core types and default components
 │   │   └── include/core/ECS/   Blob-ECS (git submodule, header-only)
 │   ├── renderer/         OpenGL renderer and render system
-│   ├── ressources/       resource loading and caching (target atom-resources)
+│   ├── resources/        resource loading and caching (target atom-resources)
 │   ├── inputs/           input events, state and cameras
 │   ├── tools/            editor library + the atom-editor executable
 │   ├── audio/  network/  physics/  script/   (placeholders)

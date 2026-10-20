@@ -46,7 +46,7 @@ set(ATOM_INPUT_USE_GLFW ON)
 
 set(ATOM_MODULES
     core
-    ressources
+    resources
     audio
     inputs
     network
