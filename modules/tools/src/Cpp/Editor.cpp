@@ -16,7 +16,7 @@
 using namespace editor;
 
 Editor::Editor(GLFWwindow *window, ECS::ECS &ecs, resources::ResourceManager &manager)
-: m_ecs(ecs), m_window(window)
+: m_ecs(ecs), m_window(window), m_manager(manager)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();

@@ -84,10 +84,14 @@ class Editor {
             return static_cast<T&>(ref);
         }
 
+        resources::ResourceManager &getResourceManager() { return m_manager; }
+        const resources::ResourceManager &getResourceManager() const { return m_manager; }
+
         std::shared_ptr<IPanel> getPanel(const std::string &name);
 
     protected:
     private:
+        resources::ResourceManager &m_manager;
         ECS::ECS &m_ecs;
         GLFWwindow *m_window;
         std::vector<PanelRegistryEntry> m_registry;

@@ -22,7 +22,7 @@ class AssetTreePanel : public APanel {
         void contextMenu(int view_id) override;
         
         void renderTree(const FileNode &node);
-        static FileNode buildTree(const std::filesystem::path &path);
+        FileNode buildTree(const std::filesystem::path &path);
 
         void setAssetPath(const std::filesystem::path &path);
 

@@ -1,6 +1,8 @@
 #include "tools/panels/AssetTreePanel.hpp"
 #include "imgui.h"
 #include "tools/panels/APanel.hpp"
+#include "resources/ResourceIncludes.hpp"
+#include "tools/Editor.hpp"
 #include <filesystem>
 
 AssetTreePanel::AssetTreePanel(editor::Editor &editor, const std::filesystem::path &root)
@@ -45,12 +47,19 @@ void AssetTreePanel::renderTree(const FileNode &node)
 
 FileNode AssetTreePanel::buildTree(const std::filesystem::path &path)
 {
+    resources::AssetRegistry &registry = m_editor.getResourceManager().assets();
+
     FileNode node;
     node.name = path.filename().string();
     node.path = path;
     node.is_dir = std::filesystem::is_directory(path);
     if (node.is_dir) {
         for (auto &entry : std::filesystem::directory_iterator(path)) {
+            if (
+                !std::filesystem::is_directory(entry.path())
+                && registry.classify(entry.path()) == resources::AssetKind::Unknown
+            )
+                continue;
             node.children.push_back(buildTree(entry.path()));
         }
     }
