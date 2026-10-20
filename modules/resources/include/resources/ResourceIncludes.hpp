@@ -36,6 +36,8 @@ using ResourceID = uint32_t;
 // A resource ID of 0 is always invalid — valid IDs start at 1
 constexpr ResourceID INVALID_RESOURCE = 0;
 
+enum class AssetKind { Unknown, Texture, Mesh, Shader, Audio, Font, Scene };
+
 // Concept for accepting resource types — resources must be movable
 // (unlike ECS components which are default-constructible, resources
 //  are built externally with real data and moved into the manager)

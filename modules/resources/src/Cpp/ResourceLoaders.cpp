@@ -21,6 +21,7 @@
  */
 
 #include "resources/ResourceLoaders.hpp"
+#include "resources/ResourcesUtils.hpp"
 
 #include "dr_wav.h"
 #include "stb_image.h"
@@ -31,6 +32,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <unordered_map>
+#include <iostream>
 
 namespace resources
 {
@@ -67,6 +69,9 @@ MeshData loadMesh(const std::string &path)
         tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str(), baseDir.c_str());
     if (!ok)
         throw std::runtime_error("Failed to load mesh: " + path + " " + err);
+    
+    if (warn.size() != 0)
+        std::cerr << warn << std::endl;
 
     MeshData mesh;
     mesh.hasNormals = !attrib.normals.empty();
@@ -168,7 +173,7 @@ ShaderData loadShader(const std::string &path)
         return ss.str();
     };
 
-    std::string ext = std::filesystem::path(path).extension().string();
+    std::string ext = toLower(std::filesystem::path(path).extension().string());
 
     if (ext == ".vert" || ext == ".vs")
     {
@@ -243,5 +248,13 @@ void registerDefaultLoaders(ResourceManager &manager)
     manager.setLoader<ShaderData>(loadShader);
     manager.setLoader<AudioData>(loadAudio);
     manager.setLoader<FontData>(loadFont);
+
+    AssetRegistry &assets = manager.assets();
+
+    assets.registerKind(AssetKind::Texture, {".png", ".jpg", ".jpeg", ".tga", ".bmp"});
+    assets.registerKind(AssetKind::Mesh,    {".obj"});
+    assets.registerKind(AssetKind::Shader,  {".vert", ".vs", ".frag", ".fs"});
+    assets.registerKind(AssetKind::Audio,   {".wav"});
+    assets.registerKind(AssetKind::Font,    {".ttf", ".otf"});
 }
 } // namespace resources

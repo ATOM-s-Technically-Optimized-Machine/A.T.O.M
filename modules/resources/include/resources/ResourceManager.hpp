@@ -26,6 +26,7 @@
 #include "ResourceIncludes.hpp"
 #include "ResourcePool.hpp"
 #include "ResourceTypes.hpp"
+#include "AssetRegistry.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -405,6 +406,9 @@ class ResourceManager
         return loaded;
     }
 
+    AssetRegistry &assets() { return m_asset_registry; }
+    const AssetRegistry &assets() const { return m_asset_registry; }
+
   private:
     /*
         Dynamic vector of type-erased pools, grows on demand.
@@ -415,6 +419,8 @@ class ResourceManager
 
     // Base directory for all resource paths. Empty = no prefix.
     std::string m_base_path;
+
+    AssetRegistry m_asset_registry;
 };
 } // namespace resources
 
