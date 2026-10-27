@@ -5,6 +5,7 @@
 #include "tools/panels/APanel.hpp"
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <imgui.h>
 
 struct FBOContext {
     unsigned int fbo = 0;
@@ -17,6 +18,13 @@ struct FBOContext {
 struct Ray {
     glm::vec3 origin;
     glm::vec3 direction;
+};
+
+struct MoveGizmoScreen {
+    bool visible = false;
+    ImVec2 origin;
+    ImVec2 tips[3];
+    bool axis_visibles[3] = {};
 };
 
 class SceneViewerPanel : public APanel {

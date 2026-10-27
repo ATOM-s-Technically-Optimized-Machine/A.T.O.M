@@ -22,7 +22,42 @@ static ImVec2 toScreen(
     float u = vp.x + (ndc.x * 0.5f + 0.5f) * vp.width;
     float v = vp.y + (ndc.y * 0.5f + 0.5f) * vp.height;
     return ImVec2(img_min.x + u * img_size.x, img_min.y + (1.0f - v) * img_size.y);
-};
+}
+
+static float distToSegment(ImVec2 p, ImVec2 a, ImVec2 b)
+{
+    float abx = b.x - a.x, aby = b.y - a.y;
+    float apx = p.x - a.x, apy = p.y - a.y;
+    float len_sq = abx * abx + aby * aby;
+    float t = len_sq > 0.0f ? std::clamp((apx * abx + apy * aby) / len_sq, 0.0f, 1.0f) : 0.0f;
+    float dx = apx - abx * t, dy = apy - aby * t;
+    return std::sqrt(dx * dx + dy * dy);
+}
+
+static ImU32 withAlpha(ImU32 col, int alpha)
+{
+    return (col & ~IM_COL32_A_MASK) | ((ImU32)alpha << IM_COL32_A_SHIFT);
+}
+
+static int hoveredAxis(const MoveGizmoScreen &g, ImVec2 mouse)
+{
+    if (!g.visible)
+        return -1;
+    const float threshold = 6.0f;
+    int best = -1;
+    float best_d = threshold;
+
+    for (int i = 0; i < 3; i++) {
+        if (!g.axis_visibles[i])
+            continue;
+        float d = distToSegment(mouse, g.origin, g.tips[i]);
+        if (d < best_d) {
+            best_d = d;
+            best = i;
+        }
+    }
+    return best;
+}
 
 static Ray mouseRay(Atom::Input::CameraComponent &cam, ImVec2 img_min, ImVec2 img_size)
 {
@@ -177,43 +212,21 @@ static void drawSelectionBox(
     draw->PopClipRect();
 }
 
-static void drawMoveGuizmo(
-    ECS::ECS &ecs,
-    ECS::EntityID e,
-    Atom::Input::CameraComponent &cam,
+static void drawMoveGizmo(
+    MoveGizmoScreen g,
+    int hovered_axis,
     ImVec2 img_min,
     ImVec2 img_size
 )
 {
-    if (!ecs.entityIsActive(e) || !ecs.entityHasComponent<TransformComponent>(e))
-        return;
-
-    auto &transform = ecs.entityGetComponent<TransformComponent>(e);
-    glm::vec3 origin = transform.position;
-    float len = glm::distance(cam.camera.position(), origin) * 0.15f;
-
-    glm::mat4 vp_mat = cam.camera.viewProjectionMatrix();
-    glm::vec4 o_clip = vp_mat * glm::vec4(origin, 1.0f);
-
-    if (o_clip.w <= 0.0f)
-        return;
-    
-    ImVec2 o_px = toScreen(o_clip, cam.viewport, img_min, img_size);
-
-    const glm::vec3 axes[3] = { {1,0,0}, {0,1,0}, {0,0,1} };
     const ImU32 colors[3] = { IM_COL32(230,60,60,255), IM_COL32(60,200,60,255), IM_COL32(60,110,230,255) };
 
     ImDrawList *draw = ImGui::GetWindowDrawList();
     draw->PushClipRect(img_min, ImVec2(img_min.x + img_size.x, img_min.y + img_size.y), true);
 
     for (int i = 0; i < 3; i++) {
-        glm::vec4 end_clip = vp_mat * glm::vec4(origin + axes[i] * len, 1.0f);
-        if (end_clip.w <= 0)
-            continue;
-        ImVec2 end_px = toScreen(end_clip, cam.viewport, img_min, img_size);
-
-        float dx = end_px.x - o_px.x;
-        float dy = end_px.y - o_px.y;
+        float dx = g.tips[i].x - g.origin.x;
+        float dy = g.tips[i].y - g.origin.y;
         float length = std::sqrt(dx * dx + dy * dy);
 
         if (length < 1.0f)
@@ -225,16 +238,68 @@ static void drawMoveGuizmo(
         const float head_length = 12.0f;
         const float head_width = 5.0f;
         
-        ImVec2 tip = end_px;
+        ImVec2 tip = g.tips[i];
         ImVec2 base(tip.x - dir.x * head_length, tip.y - dir.y * head_length);
         ImVec2 right(base.x + perp.x * head_width, base.y + perp.y * head_width);
         ImVec2 left(base.x - perp.x * head_width, base.y - perp.y * head_width);
 
-        draw->AddLine(o_px, base, colors[i], 3.0f);
-        draw->AddTriangleFilled(tip, left, right, colors[i]);
+        bool hot = (i == hovered_axis);
+        ImColor col = hot ? IM_COL32(255, 220, 80, 255) : colors[i];
+
+        if (hot) {
+            const float widths[] = {12.0f, 8.0f};
+            const int alphas[] = {40, 90};
+            for (int k = 0; k < 2; k++) {
+                ImVec2 circle_center(g.tips[i].x - (head_length * dir.x * 0.7f), g.tips[i].y - (head_length * dir.y * 0.7f));
+                draw->AddLine(g.origin, g.tips[i], withAlpha(col, alphas[k]), widths[k]);
+                draw->AddCircleFilled(circle_center, widths[k] * 0.9f, withAlpha(col, alphas[k]));
+            }
+        }
+
+        draw->AddLine(g.origin, base, col, hot ? 4.0f : 3.0f);
+        draw->AddTriangleFilled(tip, left, right, col);
     }
 
     draw->PopClipRect();
+}
+
+static MoveGizmoScreen computeMoveGizmo(ECS::ECS &ecs, ECS::EntityID e, Atom::Input::CameraComponent &cam, ImVec2 img_min, ImVec2 img_size)
+{
+    MoveGizmoScreen g;
+    if (!ecs.entityIsActive(e) || !ecs.entityHasComponent<TransformComponent>(e))
+        return g;
+
+    auto &transform = ecs.entityGetComponent<TransformComponent>(e);
+    glm::vec3 origin = transform.position;
+    float len = glm::distance(cam.camera.position(), origin) * 0.15f;
+
+    glm::mat4 vp_mat = cam.camera.viewProjectionMatrix();
+    glm::vec4 o_clip = vp_mat * glm::vec4(origin, 1.0f);
+
+    if (o_clip.w <= 0.0f)
+        return g;
+
+    g.origin = toScreen(o_clip, cam.viewport, img_min, img_size);
+    g.visible = true;
+
+    const glm::vec3 axes[3] = { {1,0,0}, {0,1,0}, {0,0,1} };
+
+    for (int i = 0; i < 3; i++) {
+        glm::vec4 end_clip = vp_mat * glm::vec4(origin + axes[i] * len, 1.0f);
+        if (end_clip.w <= 0)
+            continue;
+        ImVec2 end_px = toScreen(end_clip, cam.viewport, img_min, img_size);
+
+        float dx = end_px.x - g.origin.x;
+        float dy = end_px.y - g.origin.y;
+        float length = std::sqrt(dx * dx + dy * dy);
+
+        if (length < 1.0f)
+            continue;
+        g.tips[i] = end_px;
+        g.axis_visibles[i] = true;
+    }
+    return g;
 }
 
 SceneViewerPanel::SceneViewerPanel(editor::Editor &editor, GLFWwindow *window, ECS::ECS &ecs)
@@ -298,19 +363,28 @@ void SceneViewerPanel::render(int view_id)
     ECS::EntityID cam_id = cameras[0];
     auto &cam = m_ecs.entityGetComponent<Atom::Input::CameraComponent>(cam_id);
     cam.enabled = m_captured ? true : should_capture;
+    
+    ECS::EntityID sel = m_editor.getSelectedEntity();
+    MoveGizmoScreen gizmo = computeMoveGizmo(m_ecs, sel, cam, img_min, size);
+
+    int hovered_axis = -1;
+    if (hovered && !m_captured)
+        hovered_axis = hoveredAxis(gizmo, ImGui::GetMousePos());
+    
+    if (hovered_axis != -1)
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
 
     ECS::EntityID hovered_entity = ECS::NULL_ENTITY;
-    if (hovered && !m_captured)
+    if (hovered && !m_captured && hovered_axis == -1)
         hovered_entity = pickEntity(m_ecs, mouseRay(cam, img_min, size));
     
     if (hovered_entity != ECS::NULL_ENTITY && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
         m_editor.setSelectedEntity(hovered_entity);
-    
-    ECS::EntityID sel = m_editor.getSelectedEntity();
+
     if (hovered_entity != sel)
         drawSelectionBox(m_ecs, hovered_entity, cam, img_min, size, IM_COL32(255, 255, 255, 120));
     drawSelectionBox(m_ecs, sel, cam, img_min, size);
-    drawMoveGuizmo(m_ecs, sel, cam, img_min, size);
+    drawMoveGizmo(gizmo, hovered_axis, img_min, size);
 }
 
 void SceneViewerPanel::contextMenu(int view_id)
