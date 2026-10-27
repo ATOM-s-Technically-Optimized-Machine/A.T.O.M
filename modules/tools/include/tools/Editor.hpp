@@ -89,6 +89,9 @@ class Editor {
 
         std::shared_ptr<IPanel> getPanel(const std::string &name);
 
+        ECS::EntityID getSelectedEntity() const { return m_selected_entity; }
+        void setSelectedEntity(ECS::EntityID entity) { m_selected_entity = entity; }
+
     protected:
     private:
         resources::ResourceManager &m_manager;
@@ -100,6 +103,7 @@ class Editor {
         int m_palette_selected = 0;
         char m_palette_buff[128] = {};
         int m_ids = 1;
+        ECS::EntityID m_selected_entity = ECS::NULL_ENTITY;
 };
 
 }

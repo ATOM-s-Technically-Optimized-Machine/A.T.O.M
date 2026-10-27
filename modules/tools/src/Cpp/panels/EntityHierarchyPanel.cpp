@@ -51,29 +51,22 @@ void EntityHierarchyPanel::renderEntities(const ECS::DenseComponent<HierarchyNod
         ? m_ecs.entityGetComponent<NameComponent>(curr_entity) + " (" + std::to_string(curr_entity) + ")"
         : "Entity ID " + std::to_string(curr_entity);
 
+    ECS::EntityID selected = m_editor.getSelectedEntity();
+
     if (node.children.size() != 0) {
         ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
-        if (curr_entity == m_selected_entity)
+        if (curr_entity == selected)
             flags |= ImGuiTreeNodeFlags_Selected;
         bool open = ImGui::TreeNodeEx(display_name.c_str(), flags);
         if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
-            selectEntity(curr_entity);
+            m_editor.setSelectedEntity(curr_entity);
         if (open) {
             for (auto &other : node.children)
                 renderEntities(data, other);
             ImGui::TreePop();
         }
     } else {
-        if (ImGui::Selectable(display_name.c_str(), curr_entity == m_selected_entity))
-            selectEntity(curr_entity);
+        if (ImGui::Selectable(display_name.c_str(), curr_entity == selected))
+            m_editor.setSelectedEntity(curr_entity);
     }
-}
-
-void EntityHierarchyPanel::selectEntity(ECS::EntityID entity)
-{
-    m_selected_entity = entity;
-
-    auto panel = m_editor.getPanel("Entity viewer");
-    if (panel)
-        std::static_pointer_cast<EntityViewerPanel>(panel)->setTargetEntity(entity);
 }

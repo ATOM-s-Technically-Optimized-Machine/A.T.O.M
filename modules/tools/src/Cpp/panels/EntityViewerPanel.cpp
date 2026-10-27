@@ -27,27 +27,24 @@ EntityViewerPanel::~EntityViewerPanel()
 
 void EntityViewerPanel::render(int view_id)
 {
-    if (m_selected_entity == ECS::NULL_ENTITY) {
+    if (m_editor.getSelectedEntity() == ECS::NULL_ENTITY) {
         ImGui::Text("No selected entity");
         return;
     }
     showEntityComponents();
 }
 
-void EntityViewerPanel::setTargetEntity(ECS::EntityID e)
-{
-    m_selected_entity = e;
-}
-
 void EntityViewerPanel::showEntityComponents()
 {
-    if (m_selected_entity == ECS::NULL_ENTITY)
+    ECS::EntityID selected_entity = m_editor.getSelectedEntity();
+    if (selected_entity== ECS::NULL_ENTITY)
         return;
 
     std::unordered_map<uint16_t, void *> components;
-    m_ecs.entityGetAllComponents(components, m_selected_entity);
+    m_ecs.entityGetAllComponents(components, selected_entity);
     std::size_t displayed_components = 0;
 
+    ImGui::PushID((int)selected_entity);
     for (auto &[id, comp] : components) {
         if (m_inspector.registry().contains(id)) {
             ComponentDescriptor descriptor;
@@ -62,6 +59,7 @@ void EntityViewerPanel::showEntityComponents()
             ImGui::TreePop();
         }
     }
+    ImGui::PopID();
     if (displayed_components == 0)
         ImGui::Text("%s", "Entity either containes no Component or they are not supported in the viewer");
 }

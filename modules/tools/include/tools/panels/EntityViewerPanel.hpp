@@ -40,7 +40,6 @@ class EntityViewerPanel : public APanel {
 
         void render(int view_id) override;
 
-        void setTargetEntity(ECS::EntityID e);
         void showEntityComponents();
         void displayFieldEntry(FieldDescriptor entry, int id);
 
@@ -49,8 +48,6 @@ class EntityViewerPanel : public APanel {
     private:
         ECS::ECS &m_ecs;
         InspectorRegistry m_inspector;
-        ECS::EntityID m_selected_entity = ECS::NULL_ENTITY;
-        int m_cached_input = -1;
 };
 
 #endif /* !ENTITYVIEWERPANEL_HPP_ */

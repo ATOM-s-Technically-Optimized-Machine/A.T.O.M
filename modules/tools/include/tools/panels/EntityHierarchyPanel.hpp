@@ -16,10 +16,7 @@ class EntityHierarchyPanel : public APanel {
         void renderEntities(const ECS::DenseComponent<HierarchyNode> &data, ECS::EntityID curr_entity);
     protected:
     private:
-        void selectEntity(ECS::EntityID entity);
-
         ECS::ECS &m_ecs;
-        ECS::EntityID m_selected_entity = ECS::NULL_ENTITY;
 };
 
 #endif /* !ENTITYHIERARCHYPANEL_HPP_ */
