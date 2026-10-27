@@ -229,11 +229,7 @@ void RenderSystem::Update(ECS::ECS &ecs, uint32_t ms)
         for (auto e : entities) {
             auto &mesh = ecs.entityGetComponent<MeshHandleComponent>(e);
             auto &transform = ecs.entityGetComponent<TransformComponent>(e);
-            glm::mat4 model = glm::mat4(1.0f);
-            
-            model = glm::translate(model, transform.position);
-            model *= glm::mat4_cast(transform.rotation);
-            model = glm::scale(model, transform.scale);
+            glm::mat4 model = TransformComponent::toWorld(transform);
             
             unsigned int shader_prog = this->getShader(mesh.attributes);
             

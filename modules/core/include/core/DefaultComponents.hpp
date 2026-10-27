@@ -56,7 +56,10 @@ struct TransformComponent {
     glm::quat rotation;
     glm::vec3 scale = glm::vec3(1.0f);
 
-    
+    // Generates a matrix that translates local transforms into global space
+    static glm::mat4 toWorld(const TransformComponent &t);
+    // Generates a matrix that translates global transforms into t's local space
+    static glm::mat4 toLocal(const TransformComponent &t);
 };
 
 struct CameraComponent {
