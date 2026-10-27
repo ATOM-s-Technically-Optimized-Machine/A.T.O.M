@@ -1,3 +1,4 @@
+#include <cfloat>
 #include <cstdio>
 #include <renderer/glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -6,6 +7,7 @@
 #include "tools/Editor.hpp"
 
 #include "core/ECS/Includes.hpp"
+#include "inputs/ECSIntegration.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -33,8 +35,27 @@ Editor::~Editor()
     ImGui::DestroyContext();
 }
 
+void Editor::setCursorCaptured(bool captured)
+{
+    if (captured == m_cursor_captured)
+        return;
+    m_cursor_captured = captured;
+    m_ecs.getSystem<Atom::Input::InputECSSystem>().setCursorCaptured(captured);
+
+    if (!captured) {
+        // GLFW restores the cursor without firing a position callback,
+        // so ImGui would keep its off-screen position until the mouse moves.
+        double mx, my;
+        glfwGetCursorPos(m_window, &mx, &my);
+        ImGui::GetIO().AddMousePosEvent((float)mx, (float)my);
+    }
+}
+
 void Editor::render()
 {
+    if (m_cursor_captured)
+        ImGui::GetIO().AddMousePosEvent(-FLT_MAX, -FLT_MAX);
+
     if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_P)) {
         m_palette_open = true;
         m_palette_buff[0] = '\0';

@@ -92,6 +92,12 @@ class Editor {
         ECS::EntityID getSelectedEntity() const { return m_selected_entity; }
         void setSelectedEntity(ECS::EntityID entity) { m_selected_entity = entity; }
 
+        // Hides/locks the cursor for camera-style mouse look. While captured,
+        // ImGui sees no mouse so nothing gets hovered. On release, both the
+        // input bridge and ImGui are resynced to the restored cursor position.
+        void setCursorCaptured(bool captured);
+        bool isCursorCaptured() const { return m_cursor_captured; }
+
     protected:
     private:
         resources::ResourceManager &m_manager;
@@ -104,6 +110,7 @@ class Editor {
         char m_palette_buff[128] = {};
         int m_ids = 1;
         ECS::EntityID m_selected_entity = ECS::NULL_ENTITY;
+        bool m_cursor_captured = false;
 };
 
 }

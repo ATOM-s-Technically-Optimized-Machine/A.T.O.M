@@ -254,8 +254,6 @@ SceneViewerPanel::~SceneViewerPanel()
 
 void SceneViewerPanel::render(int view_id)
 {
-    if (m_captured)
-        ImGui::GetIO().AddMousePosEvent(-FLT_MAX, -FLT_MAX);
     ImVec2 size = ImGui::GetContentRegionAvail();
     int w = (int)size.x, h = (int)size.y;
 
@@ -287,12 +285,11 @@ void SceneViewerPanel::render(int view_id)
 
     if (should_capture && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
         m_captured = true;
-        glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        m_editor.setCursorCaptured(true);
     }
     if (!ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
-        if (m_captured) {
-            glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
+        if (m_captured)
+            m_editor.setCursorCaptured(false);
         m_captured = false;
     }
 
