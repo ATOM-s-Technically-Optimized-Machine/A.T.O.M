@@ -378,7 +378,7 @@ void SceneViewerPanel::render(int view_id)
     if (hovered && !m_captured && hovered_axis == -1)
         hovered_entity = pickEntity(m_ecs, mouseRay(cam, img_min, size));
     
-    if (hovered_entity != ECS::NULL_ENTITY && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+    if (hovered && !m_captured && hovered_axis == -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
         m_editor.setSelectedEntity(hovered_entity);
 
     if (hovered_entity != sel)
