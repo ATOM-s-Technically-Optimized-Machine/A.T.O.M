@@ -54,7 +54,7 @@ void EntityHierarchyPanel::renderEntities(const ECS::DenseComponent<HierarchyNod
     ECS::EntityID selected = m_editor.getSelectedEntity();
 
     if (node.children.size() != 0) {
-        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
         if (curr_entity == selected)
             flags |= ImGuiTreeNodeFlags_Selected;
         bool open = ImGui::TreeNodeEx(display_name.c_str(), flags);
