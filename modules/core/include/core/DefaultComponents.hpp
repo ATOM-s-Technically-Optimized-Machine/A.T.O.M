@@ -40,6 +40,10 @@ struct MeshHandleComponent {
 
     AttributesMask attributes;
 
+    // Local-space axis-aligned bounds, filled by Create()
+    glm::vec3 boundsMin = glm::vec3(-0.5f);
+    glm::vec3 boundsMax = glm::vec3(0.5f);
+
     static MeshHandleComponent Create(
         const std::vector<float> &vertices,
         const std::vector<unsigned int> &indices,

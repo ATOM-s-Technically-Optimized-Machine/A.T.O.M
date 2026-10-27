@@ -7,6 +7,7 @@
 #include "resources/ResourceIncludes.hpp"
 #include "resources/ResourceTypes.hpp"
 #include <GLFW/glfw3.h>
+#include <cfloat>
 #include <glm/ext/quaternion_geometric.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
@@ -34,8 +35,16 @@ MeshHandleComponent MeshHandleComponent::Create(
     int count = vertices_copy.size() / vertex_size;
     cx /= count; cy /= count; cz /= count;
 
+    glm::vec3 bmin(FLT_MAX), bmax(-FLT_MAX);
     for (int i = 0; i < vertices_copy.size(); i += vertex_size) {
         vertices_copy[i] -= cx; vertices_copy[i+1] -= cy; vertices_copy[i+2] -= cz;
+        glm::vec3 p(vertices_copy[i], vertices_copy[i+1], vertices_copy[i+2]);
+        bmin = glm::min(bmin, p);
+        bmax = glm::max(bmax, p);
+    }
+    if (count > 0) {
+        meshHandle.boundsMin = bmin;
+        meshHandle.boundsMax = bmax;
     }
 
     glGenVertexArrays(1, &meshHandle.VAO);
