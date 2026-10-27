@@ -45,6 +45,7 @@ class Editor {
         Editor(GLFWwindow *window, ECS::ECS &ecs, resources::ResourceManager &manager);
         ~Editor();
 
+        void beginFrame();
         void render();
 
         void commandPalette();

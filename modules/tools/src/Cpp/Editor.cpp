@@ -51,11 +51,14 @@ void Editor::setCursorCaptured(bool captured)
     }
 }
 
-void Editor::render()
+void Editor::beginFrame()
 {
     if (m_cursor_captured)
         ImGui::GetIO().AddMousePosEvent(-FLT_MAX, -FLT_MAX);
+}
 
+void Editor::render()
+{
     if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_P)) {
         m_palette_open = true;
         m_palette_buff[0] = '\0';
