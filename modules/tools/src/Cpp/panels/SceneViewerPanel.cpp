@@ -229,7 +229,7 @@ static void drawMoveGizmo(
         float dy = g.tips[i].y - g.origin.y;
         float length = std::sqrt(dx * dx + dy * dy);
 
-        if (length < 1.0f)
+        if (!g.axis_visibles[i])
             continue;
 
         ImVec2 dir(dx / length, dy / length);
