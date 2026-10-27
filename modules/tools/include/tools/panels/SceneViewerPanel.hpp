@@ -27,6 +27,8 @@ struct MoveGizmoScreen {
     bool axis_visibles[3] = {};
 };
 
+inline constexpr glm::vec3 Axes[3] = {{1,0,0}, {0,1,0}, {0,0,1}};
+
 class SceneViewerPanel : public APanel {
     public:
         SceneViewerPanel(editor::Editor &editor, GLFWwindow *window, ECS::ECS &ecs);

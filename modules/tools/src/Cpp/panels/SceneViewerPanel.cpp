@@ -365,26 +365,53 @@ void SceneViewerPanel::render(int view_id)
     cam.enabled = m_captured ? true : should_capture;
     
     ECS::EntityID sel = m_editor.getSelectedEntity();
+    
+    if (m_drag_axis != -1 && sel != ECS::NULL_ENTITY) {
+        Ray ray = mouseRay(cam, img_min, size);
+        glm::vec3 w0 = m_drag_start_pos - ray.origin;
+        float b = glm::dot(Axes[m_drag_axis], ray.direction), d = glm::dot(Axes[m_drag_axis], w0), e = glm::dot(ray.direction, w0);
+        float denom = 1.0f - b * b;
+        float t = (b * e - d) / denom;
+        auto &transform = m_ecs.entityGetComponent<TransformComponent>(sel);
+        if (std::abs(denom) >= 1e-4f)
+            transform.position = m_drag_start_pos + Axes[m_drag_axis] * (t - m_drag_start_t);
+        if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
+            m_drag_axis = -1;
+    }
+
     MoveGizmoScreen gizmo = computeMoveGizmo(m_ecs, sel, cam, img_min, size);
 
     int hovered_axis = -1;
-    if (hovered && !m_captured)
+    if (hovered && !m_captured && m_drag_axis == -1)
         hovered_axis = hoveredAxis(gizmo, ImGui::GetMousePos());
     
     if (hovered_axis != -1)
         ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
 
     ECS::EntityID hovered_entity = ECS::NULL_ENTITY;
-    if (hovered && !m_captured && hovered_axis == -1)
+    if (hovered && !m_captured && hovered_axis == -1 && m_drag_axis == -1)
         hovered_entity = pickEntity(m_ecs, mouseRay(cam, img_min, size));
     
     if (hovered && !m_captured && hovered_axis == -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
         m_editor.setSelectedEntity(hovered_entity);
 
+    if (hovered && !m_captured && hovered_axis != -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && sel != ECS::NULL_ENTITY) {
+        m_drag_start_pos = m_ecs.entityGetComponent<TransformComponent>(sel).position;
+        Ray ray = mouseRay(cam, img_min, size);
+        glm::vec3 w0 = m_drag_start_pos - ray.origin;
+        float b = glm::dot(Axes[hovered_axis], ray.direction), d = glm::dot(Axes[hovered_axis], w0), e = glm::dot(ray.direction, w0);
+        float denom = 1.0f - b * b;
+        if (denom >= 1e-4f) {
+            float t = (b * e - d) / denom;
+            m_drag_start_t = t;
+            m_drag_axis = hovered_axis;
+        }
+    }
+
     if (hovered_entity != sel)
         drawSelectionBox(m_ecs, hovered_entity, cam, img_min, size, IM_COL32(255, 255, 255, 120));
     drawSelectionBox(m_ecs, sel, cam, img_min, size);
-    drawMoveGizmo(gizmo, hovered_axis, img_min, size);
+    drawMoveGizmo(gizmo, m_drag_axis == -1 ? hovered_axis : m_drag_axis, img_min, size);
 }
 
 void SceneViewerPanel::contextMenu(int view_id)
