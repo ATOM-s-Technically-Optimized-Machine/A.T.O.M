@@ -67,6 +67,7 @@ void GLFWBridge::setRawMouseMotion(bool enabled)
 void GLFWBridge::setCursorCaptured(bool captured)
 {
     glfwSetInputMode(m_window, GLFW_CURSOR, captured ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+    glfwGetCursorPos(m_window, &m_lastMouseX, &m_lastMouseY);
 }
 
 // =========================================================================

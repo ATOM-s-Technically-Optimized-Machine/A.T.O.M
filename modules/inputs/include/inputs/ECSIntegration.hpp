@@ -92,6 +92,7 @@ class InputECSSystem : public ECS::ISystem
 
 #ifdef ATOM_INPUT_HAS_GLFW
     void bindGLFW(GLFWwindow *window);
+    void setCursorCaptured(bool captured);
 #endif
   private:
     std::shared_ptr<InputSystem> m_input_system = std::make_shared<InputSystem>(); ///< Input system tied to the ECS system instance.

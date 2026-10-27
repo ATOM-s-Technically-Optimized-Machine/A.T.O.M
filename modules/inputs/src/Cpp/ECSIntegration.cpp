@@ -32,6 +32,12 @@ void InputECSSystem::bindGLFW(GLFWwindow *window)
     m_bridge = std::make_unique<GLFWBridge>(window, m_input_system->eventQueue());
 }
 
+void InputECSSystem::setCursorCaptured(bool captured)
+{
+    if (m_bridge)
+        m_bridge->setCursorCaptured(captured);
+}
+
 #endif
 
 // ---------------------------------------------------------------------------
