@@ -26,10 +26,13 @@ class AssetTreePanel : public APanel {
 
         void setAssetPath(const std::filesystem::path &path);
 
+        void spawnAsset(const FileNode &entry);
+
     protected:
     private:
         std::filesystem::path m_asset_path;
         FileNode m_root;
+        std::filesystem::path m_selected_asset;
         bool m_should_refresh = true;
 };
 
