@@ -452,17 +452,19 @@ void SceneViewerPanel::render(int view_id)
     if (focused && !m_captured && !dragging && sel != ECS::NULL_ENTITY) {
         if (ImGui::IsKeyPressed(ImGuiKey_M, false))
            m_tool = m_tool == EditTool::Move ? EditTool::Rotate : EditTool::Move;
+        if (ImGui::IsKeyPressed(ImGuiKey_L, false))
+            m_move_local = !m_move_local;
     }
     
     if (m_drag_axis != -1 && sel != ECS::NULL_ENTITY) {
         Ray ray = mouseRay(cam, img_min, size);
         glm::vec3 w0 = m_drag_start_pos - ray.origin;
-        float b = glm::dot(Axes[m_drag_axis], ray.direction), d = glm::dot(Axes[m_drag_axis], w0), e = glm::dot(ray.direction, w0);
+        float b = glm::dot(m_drag_dir, ray.direction), d = glm::dot(m_drag_dir, w0), e = glm::dot(ray.direction, w0);
         float denom = 1.0f - b * b;
         float t = (b * e - d) / denom;
         auto &transform = m_ecs.entityGetComponent<TransformComponent>(sel);
         if (std::abs(denom) >= 1e-4f)
-            transform.position = m_drag_start_pos + Axes[m_drag_axis] * (t - m_drag_start_t);
+            transform.position = m_drag_start_pos + m_drag_dir * (t - m_drag_start_t);
         if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
             m_drag_axis = -1;
     }
@@ -480,7 +482,7 @@ void SceneViewerPanel::render(int view_id)
             m_drag_ring = -1;
     }
 
-    MoveGizmoScreen gizmo = computeMoveGizmo(m_ecs, sel, cam, img_min, size, m_tool == EditTool::Rotate);
+    MoveGizmoScreen gizmo = computeMoveGizmo(m_ecs, sel, cam, img_min, size, m_tool == EditTool::Rotate || m_move_local);
     RotateGizmoScreen rings;
 
     if (m_tool == EditTool::Rotate)
@@ -506,14 +508,17 @@ void SceneViewerPanel::render(int view_id)
         m_editor.setSelectedEntity(hovered_entity);
 
     if (hovered && !m_captured && hovered_axis != -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && sel != ECS::NULL_ENTITY) {
-        m_drag_start_pos = m_ecs.entityGetComponent<TransformComponent>(sel).position;
+        auto &transform = m_ecs.entityGetComponent<TransformComponent>(sel);
+        glm::vec3 dir = m_move_local ? glm::normalize(transform.rotation) * Axes[hovered_axis] : Axes[hovered_axis];
+        m_drag_start_pos = transform.position;
         Ray ray = mouseRay(cam, img_min, size);
         glm::vec3 w0 = m_drag_start_pos - ray.origin;
-        float b = glm::dot(Axes[hovered_axis], ray.direction), d = glm::dot(Axes[hovered_axis], w0), e = glm::dot(ray.direction, w0);
+        float b = glm::dot(dir, ray.direction), d = glm::dot(dir, w0), e = glm::dot(ray.direction, w0);
         float denom = 1.0f - b * b;
         if (denom >= 1e-4f) {
             float t = (b * e - d) / denom;
             m_drag_start_t = t;
+            m_drag_dir = dir;
             m_drag_axis = hovered_axis;
         }
     }
@@ -538,8 +543,12 @@ void SceneViewerPanel::render(int view_id)
         drawRotateGizmo(rings, m_drag_ring == -1 ? hovered_ring : m_drag_ring, img_min, size);
     drawMoveGizmo(gizmo, m_drag_axis == -1 ? hovered_axis : m_drag_axis, img_min, size);
     
-    ImGui::GetWindowDrawList()->AddText(ImVec2(img_min.x + 8, img_min.y + 8), IM_COL32_WHITE,
-        m_tool == EditTool::Move ? "Move (M)" : "Rotate (M)");
+    const char *label = m_tool == EditTool::Rotate
+        ? "Rotate (M)"
+        : m_move_local
+            ? "Move (M) Local (L)"
+            : "Move (M) Global (L)";
+    ImGui::GetWindowDrawList()->AddText(ImVec2(img_min.x + 8, img_min.y + 8), IM_COL32_WHITE, label);
 }
 
 void SceneViewerPanel::contextMenu(int view_id)
