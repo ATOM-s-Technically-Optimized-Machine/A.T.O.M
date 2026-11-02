@@ -57,7 +57,7 @@ struct MeshHandleComponent {
 
 struct TransformComponent {
     glm::vec3 position;
-    glm::quat rotation;
+    glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
     glm::vec3 scale = glm::vec3(1.0f);
 
     // Generates a matrix that translates local transforms into global space
