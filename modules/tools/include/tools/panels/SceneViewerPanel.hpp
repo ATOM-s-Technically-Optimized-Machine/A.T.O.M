@@ -5,6 +5,7 @@
 #include "tools/panels/APanel.hpp"
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <imgui.h>
 
 struct FBOContext {
@@ -27,7 +28,17 @@ struct MoveGizmoScreen {
     bool axis_visibles[3] = {};
 };
 
+inline constexpr int RingSegments = 64;
+
+struct RotateGizmoScreen {
+    ImVec2 points[3][RingSegments];
+    bool points_visibles[3][RingSegments] = {};
+};
+
+enum class EditTool { Move, Rotate };
+
 inline constexpr glm::vec3 Axes[3] = {{1,0,0}, {0,1,0}, {0,0,1}};
+inline constexpr ImU32 AxisColors[3] = { IM_COL32(230,60,60,255), IM_COL32(60,200,60,255), IM_COL32(60,110,230,255) };
 
 class SceneViewerPanel : public APanel {
     public:
@@ -53,6 +64,11 @@ class SceneViewerPanel : public APanel {
         int m_drag_axis = -1; // -1 not dragging, 0/1/2 - X/Y/Z
         glm::vec3 m_drag_start_pos; // Entity's position when dragging started
         float m_drag_start_t; // Where on the axis the mouse was when the drag started
+        int m_drag_ring = -1;
+        glm::quat m_drag_start_rot;
+        glm::vec3 m_drag_start_vec;
+
+        EditTool m_tool = EditTool::Move;
 };
 
 #endif /* !SCENEVIEWERPANEL_HPP_ */
