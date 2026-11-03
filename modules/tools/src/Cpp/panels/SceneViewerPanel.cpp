@@ -112,7 +112,7 @@ void SceneViewerPanel::render(int view_id)
             m_drag_ring = -1;
     }
 
-    MoveGizmoScreen gizmo = computeMoveGizmo(m_ecs, sel, view, m_tool == EditTool::Rotate || m_move_local);
+    MoveGizmoScreen gizmo = computeMoveGizmo(m_ecs, sel, view, m_move_local);
     RotateGizmoScreen rings;
 
     if (m_tool == EditTool::Rotate)
@@ -167,7 +167,8 @@ void SceneViewerPanel::render(int view_id)
 
     if (m_tool == EditTool::Rotate)
         drawRotateGizmo(rings, m_drag_ring == -1 ? hovered_ring : m_drag_ring, view);
-    drawMoveGizmo(gizmo, m_drag_axis == -1 ? hovered_axis : m_drag_axis, view);
+    if (m_tool == EditTool::Move)
+        drawMoveGizmo(gizmo, m_drag_axis == -1 ? hovered_axis : m_drag_axis, view);
     
     const char *label = m_tool == EditTool::Rotate
         ? "Rotate (M)"
