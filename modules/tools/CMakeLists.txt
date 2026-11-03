@@ -48,11 +48,13 @@ endif()
 add_executable(atom-editor
     src/Cpp/main.cpp
     src/Cpp/Editor.cpp
+    src/Cpp/edit/TransformTools.cpp
     src/Cpp/panels/AssetTreePanel.cpp
     src/Cpp/panels/SceneViewerPanel.cpp
     src/Cpp/panels/CustomizeEditorPanel.cpp
     src/Cpp/panels/EntityHierarchyPanel.cpp
     src/Cpp/panels/EntityViewerPanel.cpp
+    src/Cpp/viewport/Gizmo.cpp
 )
 target_include_directories(atom-editor PRIVATE include)
 target_compile_definitions(atom-editor PRIVATE

@@ -59,8 +59,8 @@ void SceneViewerPanel::render(int view_id)
     ImVec2 img_min = ImGui::GetItemRectMin();
 
     bool focused = ImGui::IsWindowFocused();
-    bool hovered = ImGui::IsWindowHovered();
-    bool should_capture = focused && hovered;
+    bool hovered_window = ImGui::IsWindowHovered();
+    bool should_capture = focused && hovered_window;
 
     if (should_capture && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
         m_captured = true;
@@ -79,8 +79,9 @@ void SceneViewerPanel::render(int view_id)
     cam.enabled = m_captured ? true : should_capture;
 
     ViewportContext view(cam, img_min, size);
-    auto *move = dynamic_cast<MoveTool *>(m_editor.getActiveTool());
-    auto *rotate = dynamic_cast<RotateTool *>(m_editor.getActiveTool());
+    ITool *tool = m_editor.getActiveTool();
+    auto *move = dynamic_cast<MoveTool *>(tool);
+    auto *rotate = dynamic_cast<RotateTool *>(tool);
     
     ECS::EntityID sel = m_editor.getSelectedEntity();
     bool dragging = m_drag_axis != -1 || m_drag_ring != -1;
@@ -107,34 +108,26 @@ void SceneViewerPanel::render(int view_id)
             m_drag_ring = -1;
     }
 
-    MoveGizmoScreen gizmo;
-    if (move)
-        gizmo = computeMoveGizmo(m_ecs, sel, view, move->isLocal());
-    RotateGizmoScreen rings;
-
-    if (rotate)
-        rings = computeRotateGizmo(m_ecs, sel, view);
-
-    int hovered_axis = -1;
-    if (move && hovered && !m_captured && !dragging)
-        hovered_axis = hoveredAxis(gizmo, ImGui::GetMousePos());
+    std::vector<Handle> handles;
+    if (tool && m_ecs.entityIsActive(sel) && m_ecs.entityHasComponent<TransformComponent>(sel))
+        tool->buildHandles(view, m_ecs.entityGetComponent<TransformComponent>(sel), handles);
     
-    int hovered_ring = -1;
-    if (rotate && hovered && !m_captured && !dragging)
-        hovered_ring = hoveredRing(rings, ImGui::GetMousePos());
+    const Handle *hovered = (hovered_window && !m_captured && !dragging) ? hoveredHandle(handles, ImGui::GetMousePos()) : nullptr;
+    int hovered_axis = (move && hovered) ? hovered->axis : -1;
+    int hovered_ring = (rotate && hovered) ? hovered->axis : -1;
 
     bool over_gizmo = hovered_axis != -1 || hovered_ring != -1;
     if (over_gizmo)
         ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
 
     ECS::EntityID hovered_entity = ECS::NULL_ENTITY;
-    if (hovered && !m_captured && !over_gizmo && !dragging)
+    if (hovered_window && !m_captured && !over_gizmo && !dragging)
         hovered_entity = pickEntity(m_ecs, mouseRay(view));
     
-    if (hovered && !m_captured && !over_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+    if (hovered_window && !m_captured && !over_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
         m_editor.setSelectedEntity(hovered_entity);
 
-    if (hovered && !m_captured && hovered_axis != -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && sel != ECS::NULL_ENTITY) {
+    if (hovered_window && !m_captured && hovered_axis != -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && sel != ECS::NULL_ENTITY) {
         auto &transform = m_ecs.entityGetComponent<TransformComponent>(sel);
         glm::vec3 dir = move->isLocal() ? glm::normalize(transform.rotation) * Axes[hovered_axis] : Axes[hovered_axis];
         float t;
@@ -146,7 +139,7 @@ void SceneViewerPanel::render(int view_id)
         }
     }
 
-    if (hovered && !m_captured && hovered_ring != -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && sel != ECS::NULL_ENTITY) {
+    if (hovered_window && !m_captured && hovered_ring != -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && sel != ECS::NULL_ENTITY) {
         auto &transform = m_ecs.entityGetComponent<TransformComponent>(sel);
         glm::quat rot = glm::normalize(transform.rotation);
         glm::vec3 axis = rot * Axes[hovered_ring];
@@ -162,10 +155,8 @@ void SceneViewerPanel::render(int view_id)
         drawSelectionBox(m_ecs, hovered_entity, view, IM_COL32(255, 255, 255, 120));
     drawSelectionBox(m_ecs, sel, view);
 
-    if (rotate)
-        drawRotateGizmo(rings, m_drag_ring == -1 ? hovered_ring : m_drag_ring, view);
-    if (move)
-        drawMoveGizmo(gizmo, m_drag_axis == -1 ? hovered_axis : m_drag_axis, view);
+    int hot = m_drag_axis != -1 ? m_drag_axis : m_drag_ring != -1 ? m_drag_ring : hovered_axis != -1 ? hovered_axis : hovered_ring;
+    drawHandles(handles, hot, view);
 }
 
 void SceneViewerPanel::contextMenu(int view_id)

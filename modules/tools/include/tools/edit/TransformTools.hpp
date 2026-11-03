@@ -21,6 +21,8 @@ class MoveTool : public ITool {
                 m_local = !m_local;
         }
 
+        void buildHandles(const ViewportContext &, const TransformComponent &, std::vector<Handle> &) const override;
+
         bool isLocal() const { return m_local; }
     private:
         bool m_local = false;
@@ -30,6 +32,8 @@ class RotateTool : public ITool {
     public:
         const char *name() const override { return "Rotate"; }
         ImGuiKey shortcut() const override { return ImGuiKey_R; }
+
+        void buildHandles(const ViewportContext &, const TransformComponent &, std::vector<Handle> &) const override;
 };
 
 #endif /* TRANSFORMTOOLS_HPP_ */
