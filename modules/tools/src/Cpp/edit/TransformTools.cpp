@@ -9,7 +9,7 @@ void MoveTool::buildHandles(const ViewportContext &view, const TransformComponen
     if (!project(view, transform.position, origin))
         return;
     
-    float len = gizmoLength(view.cam, transform.position);
+    float len = gizmoLength(view, transform.position);
     for (int i = 0; i < 3; i++) {
         glm::vec3 axis = m_local ? transform.rotation * Axes[i] : Axes[i];
         ImVec2 tip;
@@ -25,7 +25,7 @@ void MoveTool::buildHandles(const ViewportContext &view, const TransformComponen
 
 void RotateTool::buildHandles(const ViewportContext &view, const TransformComponent &transform, std::vector<Handle> &out) const
 {
-    float radius = gizmoLength(view.cam, transform.position);
+    float radius = gizmoLength(view, transform.position);
 
     for (int i = 0; i < 3; i++) {
         glm::vec3 u = transform.rotation * Axes[(i + 1) % 3];

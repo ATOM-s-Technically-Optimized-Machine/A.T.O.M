@@ -29,9 +29,9 @@ struct Handle {
 
 inline constexpr int RingSegments = 64;
 
-inline float gizmoLength(Atom::Input::CameraComponent &cam, glm::vec3 origin)
+inline float gizmoLength(const ViewportContext &view, glm::vec3 origin)
 {
-    return glm::distance(cam.camera.position(), origin) * 0.15;
+    return (view.view_proj * glm::vec4(origin, 1.0f)).w * 0.15f;
 }
 
 const Handle *hoveredHandle(const std::vector<Handle> &handles, ImVec2 mouse);
