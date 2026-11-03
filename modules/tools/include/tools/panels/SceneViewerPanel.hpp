@@ -16,29 +16,7 @@ struct FBOContext {
     int h = 0;
 };
 
-struct Ray {
-    glm::vec3 origin;
-    glm::vec3 direction;
-};
-
-struct MoveGizmoScreen {
-    bool visible = false;
-    ImVec2 origin;
-    ImVec2 tips[3];
-    bool axis_visibles[3] = {};
-};
-
-inline constexpr int RingSegments = 64;
-
-struct RotateGizmoScreen {
-    ImVec2 points[3][RingSegments];
-    bool points_visibles[3][RingSegments] = {};
-};
-
 enum class EditTool { Move, Rotate };
-
-inline constexpr glm::vec3 Axes[3] = {{1,0,0}, {0,1,0}, {0,0,1}};
-inline constexpr ImU32 AxisColors[3] = { IM_COL32(230,60,60,255), IM_COL32(60,200,60,255), IM_COL32(60,110,230,255) };
 
 class SceneViewerPanel : public APanel {
     public:
