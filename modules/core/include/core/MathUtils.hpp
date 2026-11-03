@@ -63,4 +63,18 @@ inline bool rayAABB(Ray ray, glm::vec3 bmin, glm::vec3 bmax, float &t_hit)
     return true;
 }
 
+inline bool rayLineParam(const Ray &ray, glm::vec3 point, glm::vec3 dir, float &t)
+{
+    glm::vec3 w0 = point - ray.origin;
+    float b = glm::dot(dir, ray.direction);
+    float d = glm::dot(dir, w0);
+    float e = glm::dot(ray.direction, w0);
+    float denom = 1.0f - b * b;
+
+    if (denom < 1e-4f)
+        return false;
+    t = (b * e - d) / denom;
+    return true;
+}
+
 #endif /* !MATHUTILS_HPP_ */
