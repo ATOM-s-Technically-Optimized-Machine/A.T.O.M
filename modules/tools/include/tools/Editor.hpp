@@ -4,6 +4,7 @@
 #include "core/ECS/ECS.hpp"
 #include "resources/ResourceManager.hpp"
 #include "tools/panels/IPanel.hpp"
+#include "tools/edit/TransformTools.hpp"
 #include <memory>
 #include <concepts>
 
@@ -54,6 +55,9 @@ class Editor {
         void killView(int id);
         std::vector<int> getViews(const std::string &name);
 
+        void toolbar();
+        void toolShortcuts();
+
         template<PanelClass T, typename... Args>
             requires std::constructible_from<T, editor::Editor &, Args...>
         T &registerPanel(std::string name, Args&&... args)
@@ -85,6 +89,20 @@ class Editor {
             return static_cast<T&>(ref);
         }
 
+        template<std::derived_from<ITool> T, typename... Args>
+        T &registerTool(Args&&... args)
+        {
+            auto tool = std::make_unique<T>(std::forward<Args>(args)...);
+            T &ref = *tool;
+
+            m_tools.push_back(std::move(tool));
+            if (!m_active_tool)
+                m_active_tool = &ref;
+            return ref;
+        }
+
+        ITool *getActiveTool() const { return m_active_tool; }
+
         resources::ResourceManager &getResourceManager() { return m_manager; }
         const resources::ResourceManager &getResourceManager() const { return m_manager; }
 
@@ -113,9 +131,11 @@ class Editor {
         char m_palette_buff[128] = {};
         int m_ids = 1;
         ECS::EntityID m_selected_entity = ECS::NULL_ENTITY;
+        std::vector<std::unique_ptr<ITool>> m_tools;
+        ITool *m_active_tool = nullptr;
         bool m_cursor_captured = false;
 };
 
-}
+} // namespace editor
 
 #endif /* !EDITOR_HPP_ */

@@ -2,6 +2,7 @@
 #define SCENEVIEWERPANEL_HPP_
 
 #include "core/ECS/ECS.hpp"
+#include "tools/Editor.hpp"
 #include "tools/panels/APanel.hpp"
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -15,8 +16,6 @@ struct FBOContext {
     int w = 0;
     int h = 0;
 };
-
-enum class EditTool { Move, Rotate };
 
 class SceneViewerPanel : public APanel {
     public:
@@ -43,12 +42,9 @@ class SceneViewerPanel : public APanel {
         glm::vec3 m_drag_dir;
         glm::vec3 m_drag_start_pos; // Entity's position when dragging started
         float m_drag_start_t; // Where on the axis the mouse was when the drag started
-        bool m_move_local = false;
         int m_drag_ring = -1;
         glm::quat m_drag_start_rot;
         glm::vec3 m_drag_start_vec;
-
-        EditTool m_tool = EditTool::Move;
 };
 
 #endif /* !SCENEVIEWERPANEL_HPP_ */

@@ -1,19 +1,18 @@
 #include <cfloat>
 #include <cstdio>
+#include <iostream>
+#include <utility>
 #include <renderer/glad/glad.h>
 #include <GLFW/glfw3.h>
-
+#include <imgui.h>
+#include <imgui_internal.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 
 #include "tools/Editor.hpp"
 
 #include "core/ECS/Includes.hpp"
 #include "inputs/ECSIntegration.hpp"
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-
-#include <iostream>
-#include <utility>
 
 using namespace editor;
 
@@ -65,6 +64,8 @@ void Editor::render()
     }
 
     if (m_palette_open) commandPalette();
+
+    toolShortcuts();
 
     std::vector<ViewEntry> to_close;
 
@@ -184,6 +185,36 @@ std::vector<int> Editor::getViews(const std::string &name)
             ids.push_back(entry.second.id);
     }
     return ids;
+}
+
+void Editor::toolbar()
+{
+    float height = ImGui::GetFrameHeight() + ImGui::GetStyle().WindowPadding.y * 2.0f;
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings;
+
+    if (ImGui::BeginViewportSideBar("##toolbar", ImGui::GetMainViewport(), ImGuiDir_Up, height, flags)) {
+        for (auto &tool : m_tools) {
+            if (ImGui::RadioButton(tool->name(), tool.get() == m_active_tool))
+                m_active_tool = tool.get();
+            ImGui::SameLine();
+        }
+        if (m_active_tool)
+            m_active_tool->options();
+    }
+    ImGui::End();
+}
+
+void Editor::toolShortcuts()
+{
+    if (ImGui::GetIO().WantTextInput || ImGui::IsMouseDown(ImGuiMouseButton_Left))
+        return;
+    
+    for (auto &tool : m_tools) {
+        if (ImGui::IsKeyChordPressed(tool->shortcut()))
+            m_active_tool = tool.get();
+    }
+    if (m_active_tool)
+        m_active_tool->onKeys();
 }
 
 std::shared_ptr<IPanel> Editor::getPanel(const std::string &name)

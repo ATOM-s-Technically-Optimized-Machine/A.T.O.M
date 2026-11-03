@@ -79,17 +79,12 @@ void SceneViewerPanel::render(int view_id)
     cam.enabled = m_captured ? true : should_capture;
 
     ViewportContext view(cam, img_min, size);
+    auto *move = dynamic_cast<MoveTool *>(m_editor.getActiveTool());
+    auto *rotate = dynamic_cast<RotateTool *>(m_editor.getActiveTool());
     
     ECS::EntityID sel = m_editor.getSelectedEntity();
     bool dragging = m_drag_axis != -1 || m_drag_ring != -1;
 
-    if (focused && !m_captured && !dragging && sel != ECS::NULL_ENTITY) {
-        if (ImGui::IsKeyPressed(ImGuiKey_M, false))
-           m_tool = m_tool == EditTool::Move ? EditTool::Rotate : EditTool::Move;
-        if (ImGui::IsKeyPressed(ImGuiKey_L, false))
-            m_move_local = !m_move_local;
-    }
-    
     if (m_drag_axis != -1 && sel != ECS::NULL_ENTITY) {
         float t;
         auto &transform = m_ecs.entityGetComponent<TransformComponent>(sel);
@@ -112,18 +107,20 @@ void SceneViewerPanel::render(int view_id)
             m_drag_ring = -1;
     }
 
-    MoveGizmoScreen gizmo = computeMoveGizmo(m_ecs, sel, view, m_move_local);
+    MoveGizmoScreen gizmo;
+    if (move)
+        gizmo = computeMoveGizmo(m_ecs, sel, view, move->isLocal());
     RotateGizmoScreen rings;
 
-    if (m_tool == EditTool::Rotate)
+    if (rotate)
         rings = computeRotateGizmo(m_ecs, sel, view);
 
     int hovered_axis = -1;
-    if (m_tool == EditTool::Move && hovered && !m_captured && !dragging)
+    if (move && hovered && !m_captured && !dragging)
         hovered_axis = hoveredAxis(gizmo, ImGui::GetMousePos());
     
     int hovered_ring = -1;
-    if (m_tool == EditTool::Rotate && hovered && !m_captured && !dragging)
+    if (rotate && hovered && !m_captured && !dragging)
         hovered_ring = hoveredRing(rings, ImGui::GetMousePos());
 
     bool over_gizmo = hovered_axis != -1 || hovered_ring != -1;
@@ -139,7 +136,7 @@ void SceneViewerPanel::render(int view_id)
 
     if (hovered && !m_captured && hovered_axis != -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && sel != ECS::NULL_ENTITY) {
         auto &transform = m_ecs.entityGetComponent<TransformComponent>(sel);
-        glm::vec3 dir = m_move_local ? glm::normalize(transform.rotation) * Axes[hovered_axis] : Axes[hovered_axis];
+        glm::vec3 dir = move->isLocal() ? glm::normalize(transform.rotation) * Axes[hovered_axis] : Axes[hovered_axis];
         float t;
         if (rayLineParam(mouseRay(view), transform.position, dir, t)) {
             m_drag_start_pos = transform.position;
@@ -165,17 +162,10 @@ void SceneViewerPanel::render(int view_id)
         drawSelectionBox(m_ecs, hovered_entity, view, IM_COL32(255, 255, 255, 120));
     drawSelectionBox(m_ecs, sel, view);
 
-    if (m_tool == EditTool::Rotate)
+    if (rotate)
         drawRotateGizmo(rings, m_drag_ring == -1 ? hovered_ring : m_drag_ring, view);
-    if (m_tool == EditTool::Move)
+    if (move)
         drawMoveGizmo(gizmo, m_drag_axis == -1 ? hovered_axis : m_drag_axis, view);
-    
-    const char *label = m_tool == EditTool::Rotate
-        ? "Rotate (M)"
-        : m_move_local
-            ? "Move (M) Local (L)"
-            : "Move (M) Global (L)";
-    ImGui::GetWindowDrawList()->AddText(ImVec2(img_min.x + 8, img_min.y + 8), IM_COL32_WHITE, label);
 }
 
 void SceneViewerPanel::contextMenu(int view_id)

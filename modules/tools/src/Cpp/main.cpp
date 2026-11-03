@@ -159,6 +159,11 @@ int main()
     editor.registerPanel<SceneViewerPanel>("Scene", window, ecs);
     editor.registerPanel<CustomizeEditorPanel>("Theme editor");
     editor.registerPanel<EntityHierarchyPanel>("Scene Hierarchy", ecs);
+
+    editor.registerTool<SelectTool>();
+    editor.registerTool<MoveTool>();
+    editor.registerTool<RotateTool>();
+
     auto &e_viewer = editor.registerPanel<EntityViewerPanel>("Entity viewer", ecs);
 
     e_viewer.inspector().registerInspector<TransformComponent>(
@@ -184,6 +189,7 @@ int main()
         ImGui_ImplGlfw_NewFrame();
         editor.beginFrame();
         ImGui::NewFrame();
+        editor.toolbar();
         ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 
         editor.render();
