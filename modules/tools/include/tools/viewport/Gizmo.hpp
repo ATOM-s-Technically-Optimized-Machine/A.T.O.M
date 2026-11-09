@@ -25,6 +25,7 @@ struct Handle {
     ImU32 color;
     HandleStyle style;
     std::vector<Segment> segments;
+    bool hot = false;
 };
 
 inline constexpr int RingSegments = 64;
@@ -35,7 +36,7 @@ inline float gizmoLength(const ViewportContext &view, glm::vec3 origin)
 }
 
 const Handle *hoveredHandle(const std::vector<Handle> &handles, ImVec2 mouse);
-void drawHandles(const std::vector<Handle> &handles, int hot_axis, const ViewportContext &view);
+void drawHandles(const std::vector<Handle> &handles, const ViewportContext &view);
 
 inline float distToSegment(ImVec2 p, const Segment &s)
 {

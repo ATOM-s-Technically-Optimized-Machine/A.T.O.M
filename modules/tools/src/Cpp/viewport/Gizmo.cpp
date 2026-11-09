@@ -40,19 +40,18 @@ static void drawArrow(const Segment &segment, ImU32 color, ImDrawList *draw, boo
     draw->AddTriangleFilled(segment.b, left, right, color);
 }
 
-void drawHandles(const std::vector<Handle> &handles, int hot_axis, const ViewportContext &view)
+void drawHandles(const std::vector<Handle> &handles, const ViewportContext &view)
 {
     ImDrawList *draw = ImGui::GetWindowDrawList();
     draw->PushClipRect(view.min, ImVec2(view.min.x + view.size.x, view.min.y + view.size.y), true);
 
     for (const auto &handle : handles) {
-        bool hot = handle.axis == hot_axis;
-        ImU32 color = hot ? IM_COL32(255, 220, 80, 255) : handle.color;
+        ImU32 color = handle.hot ? IM_COL32(255, 220, 80, 255) : handle.color;
         for (const auto &segment : handle.segments) {
             if (handle.style == HandleStyle::Arrow)
-                drawArrow(segment, color, draw, hot);
+                drawArrow(segment, color, draw, handle.hot);
             else
-                draw->AddLine(segment.a, segment.b, color, hot ? 4.5 : 2.5);
+                draw->AddLine(segment.a, segment.b, color, handle.hot ? 4.5 : 2.5);
         }
     }
 

@@ -98,6 +98,9 @@ void SceneViewerPanel::render(int view_id)
     
     // Checking hovered handle and storing which axis it is
     const Handle *hovered = (hovered_window && !m_captured && !dragging) ? hoveredHandle(handles, ImGui::GetMousePos()) : nullptr;
+    for (auto &handle : handles)
+        if (&handle == hovered || (dragging && handle.axis == m_drag_axis))
+            handle.hot = true;
 
     // Change mouse cursor if hovering
     if (hovered)
@@ -125,8 +128,7 @@ void SceneViewerPanel::render(int view_id)
         drawSelectionBox(m_ecs, hovered_entity, view, IM_COL32(255, 255, 255, 120));
     drawSelectionBox(m_ecs, sel, view);
 
-    int hot = dragging ? m_drag_axis : hovered ? hovered->axis : -1;
-    drawHandles(handles, hot, view);
+    drawHandles(handles, view);
 }
 
 void SceneViewerPanel::contextMenu(int view_id)
