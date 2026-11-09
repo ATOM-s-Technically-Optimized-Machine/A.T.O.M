@@ -37,14 +37,8 @@ class SceneViewerPanel : public APanel {
         GLFWwindow *m_window;
         std::unordered_map<int, FBOContext> m_view_fbos;
 
-        // Move guizmo
-        int m_drag_axis = -1; // -1 not dragging, 0/1/2 - X/Y/Z
-        glm::vec3 m_drag_dir;
-        glm::vec3 m_drag_start_pos; // Entity's position when dragging started
-        float m_drag_start_t; // Where on the axis the mouse was when the drag started
-        int m_drag_ring = -1;
-        glm::quat m_drag_start_rot;
-        glm::vec3 m_drag_start_vec;
+        ECS::EntityID m_drag_entity = ECS::NULL_ENTITY;
+        int m_drag_axis = -1;
 };
 
 #endif /* !SCENEVIEWERPANEL_HPP_ */

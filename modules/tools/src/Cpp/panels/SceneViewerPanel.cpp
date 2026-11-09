@@ -72,90 +72,60 @@ void SceneViewerPanel::render(int view_id)
         m_captured = false;
     }
 
+    // Get camera
     std::vector<ECS::EntityID> cameras;
     m_ecs.getEntitiesByComponentsAllOf<Atom::Input::CameraComponent>(cameras);
     ECS::EntityID cam_id = cameras[0];
     auto &cam = m_ecs.entityGetComponent<Atom::Input::CameraComponent>(cam_id);
     cam.enabled = m_captured ? true : should_capture;
 
+    // Get view and active tool
     ViewportContext view(cam, img_min, size);
     ITool *tool = m_editor.getActiveTool();
-    auto *move = dynamic_cast<MoveTool *>(tool);
-    auto *rotate = dynamic_cast<RotateTool *>(tool);
-    
+
+    // Get selected entity and drag state
     ECS::EntityID sel = m_editor.getSelectedEntity();
-    bool dragging = m_drag_axis != -1 || m_drag_ring != -1;
+    bool dragging = m_drag_entity != ECS::NULL_ENTITY;
 
-    if (m_drag_axis != -1 && sel != ECS::NULL_ENTITY) {
-        float t;
-        auto &transform = m_ecs.entityGetComponent<TransformComponent>(sel);
-        if (rayLineParam(mouseRay(view), m_drag_start_pos, m_drag_dir, t))
-            transform.position = m_drag_start_pos + m_drag_dir * (t - m_drag_start_t);
-        if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
-            m_drag_axis = -1;
-    }
+    // Update drag state
+    if (dragging && (!tool || !tool->updateDrag(mouseRay(view), m_ecs, m_drag_entity) || !ImGui::IsMouseDown(ImGuiMouseButton_Left)))
+        m_drag_entity = ECS::NULL_ENTITY;
 
-    if (m_drag_ring != -1 && sel != ECS::NULL_ENTITY) {
-        auto &transform = m_ecs.entityGetComponent<TransformComponent>(sel);
-        glm::vec3 axis = m_drag_start_rot * Axes[m_drag_ring];
-        glm::vec3 hit;
-        if (rayPlane(mouseRay(view), transform.position, axis, hit)) {
-            glm::vec3 now = hit - transform.position;
-            float angle = std::atan2(glm::dot(glm::cross(m_drag_start_vec, now), axis), glm::dot(m_drag_start_vec, now));
-            transform.rotation = glm::angleAxis(angle, axis) * m_drag_start_rot;
-        }
-        if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
-            m_drag_ring = -1;
-    }
-
+    // Building gizmo handles
     std::vector<Handle> handles;
-    if (tool && m_ecs.entityIsActive(sel) && m_ecs.entityHasComponent<TransformComponent>(sel))
-        tool->buildHandles(view, m_ecs.entityGetComponent<TransformComponent>(sel), handles);
+    if (tool && m_ecs.entityIsActive(sel))
+        tool->buildHandles(view, m_ecs, sel, handles);
     
+    // Checking hovered handle and storing which axis it is
     const Handle *hovered = (hovered_window && !m_captured && !dragging) ? hoveredHandle(handles, ImGui::GetMousePos()) : nullptr;
-    int hovered_axis = (move && hovered) ? hovered->axis : -1;
-    int hovered_ring = (rotate && hovered) ? hovered->axis : -1;
 
-    bool over_gizmo = hovered_axis != -1 || hovered_ring != -1;
-    if (over_gizmo)
+    // Change mouse cursor if hovering
+    if (hovered)
         ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
 
+    // Get the hovered entity if gizmo isn't hovered
     ECS::EntityID hovered_entity = ECS::NULL_ENTITY;
-    if (hovered_window && !m_captured && !over_gizmo && !dragging)
+    if (hovered_window && !m_captured && !hovered && !dragging)
         hovered_entity = pickEntity(m_ecs, mouseRay(view));
     
-    if (hovered_window && !m_captured && !over_gizmo && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+    // If clicked while hovering entity, select entity
+    if (hovered_window && !m_captured && !hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
         m_editor.setSelectedEntity(hovered_entity);
 
-    if (hovered_window && !m_captured && hovered_axis != -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && sel != ECS::NULL_ENTITY) {
-        auto &transform = m_ecs.entityGetComponent<TransformComponent>(sel);
-        glm::vec3 dir = move->isLocal() ? glm::normalize(transform.rotation) * Axes[hovered_axis] : Axes[hovered_axis];
-        float t;
-        if (rayLineParam(mouseRay(view), transform.position, dir, t)) {
-            m_drag_start_pos = transform.position;
-            m_drag_start_t = t;
-            m_drag_dir = dir;
-            m_drag_axis = hovered_axis;
+    // Start dragging if gizmo hovered and mouse clicked
+    if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+        if (tool->beginDrag(*hovered, mouseRay(view), m_ecs, sel)) {
+            m_drag_entity = sel;
+            m_drag_axis = hovered->axis;
         }
     }
 
-    if (hovered_window && !m_captured && hovered_ring != -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && sel != ECS::NULL_ENTITY) {
-        auto &transform = m_ecs.entityGetComponent<TransformComponent>(sel);
-        glm::quat rot = glm::normalize(transform.rotation);
-        glm::vec3 axis = rot * Axes[hovered_ring];
-        glm::vec3 hit;
-        if (rayPlane(mouseRay(view), transform.position, axis, hit)) {
-            m_drag_start_rot = rot;
-            m_drag_start_vec = hit - transform.position;
-            m_drag_ring = hovered_ring;
-        }
-    }
-
+    // Draw boxes around selected/hovered entities
     if (hovered_entity != sel)
         drawSelectionBox(m_ecs, hovered_entity, view, IM_COL32(255, 255, 255, 120));
     drawSelectionBox(m_ecs, sel, view);
 
-    int hot = m_drag_axis != -1 ? m_drag_axis : m_drag_ring != -1 ? m_drag_ring : hovered_axis != -1 ? hovered_axis : hovered_ring;
+    int hot = dragging ? m_drag_axis : hovered ? hovered->axis : -1;
     drawHandles(handles, hot, view);
 }
 

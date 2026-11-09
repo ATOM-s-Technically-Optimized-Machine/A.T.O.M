@@ -1,6 +1,9 @@
 #ifndef TRANSFORMTOOLS_HPP_
 #define TRANSFORMTOOLS_HPP_
 
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+
 #include "tools/edit/ITool.hpp"
 
 class SelectTool : public ITool {
@@ -21,11 +24,15 @@ class MoveTool : public ITool {
                 m_local = !m_local;
         }
 
-        void buildHandles(const ViewportContext &, const TransformComponent &, std::vector<Handle> &) const override;
+        void buildHandles(const ViewportContext &, ECS::ECS &, ECS::EntityID, std::vector<Handle> &) const override;
 
-        bool isLocal() const { return m_local; }
+        bool beginDrag(const Handle &, const Ray &, ECS::ECS &, ECS::EntityID) override;
+        bool updateDrag(const Ray &, ECS::ECS &, ECS::EntityID) override;
     private:
         bool m_local = false;
+        glm::vec3 m_dir;
+        glm::vec3 m_start_pos;
+        float m_start_t;
 };
 
 class RotateTool : public ITool {
@@ -33,7 +40,14 @@ class RotateTool : public ITool {
         const char *name() const override { return "Rotate"; }
         ImGuiKey shortcut() const override { return ImGuiKey_R; }
 
-        void buildHandles(const ViewportContext &, const TransformComponent &, std::vector<Handle> &) const override;
+        void buildHandles(const ViewportContext &, ECS::ECS &, ECS::EntityID, std::vector<Handle> &) const override;
+
+        bool beginDrag(const Handle &, const Ray &, ECS::ECS &, ECS::EntityID) override;
+        bool updateDrag(const Ray &, ECS::ECS &, ECS::EntityID) override;
+    private:
+        glm::vec3 m_axis;
+        glm::quat m_start_rot;
+        glm::vec3 m_start_vec;
 };
 
 #endif /* TRANSFORMTOOLS_HPP_ */

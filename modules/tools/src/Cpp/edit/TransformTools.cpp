@@ -3,8 +3,20 @@
 #include "tools/viewport/Gizmo.hpp"
 #include "core/DefaultComponents.hpp"
 
-void MoveTool::buildHandles(const ViewportContext &view, const TransformComponent &transform, std::vector<Handle> &out) const
+static TransformComponent *getTransform(ECS::ECS &ecs, ECS::EntityID e)
 {
+    if (!ecs.entityIsActive(e) || !ecs.entityHasComponent<TransformComponent>(e))
+        return nullptr;
+    return &ecs.entityGetComponent<TransformComponent>(e);
+}
+
+void MoveTool::buildHandles(const ViewportContext &view, ECS::ECS &ecs, ECS::EntityID e, std::vector<Handle> &out) const
+{
+    auto *t = getTransform(ecs, e);
+    if (!t)
+        return;
+    
+    auto &transform = *t;
     ImVec2 origin;
     if (!project(view, transform.position, origin))
         return;
@@ -23,8 +35,45 @@ void MoveTool::buildHandles(const ViewportContext &view, const TransformComponen
     }
 }
 
-void RotateTool::buildHandles(const ViewportContext &view, const TransformComponent &transform, std::vector<Handle> &out) const
+bool MoveTool::beginDrag(const Handle &handle, const Ray &ray, ECS::ECS &ecs, ECS::EntityID e)
 {
+    auto *raw_transform = getTransform(ecs, e);
+    if (!raw_transform)
+        return false;
+    
+    auto &transform = *raw_transform;
+    glm::vec3 dir = m_local ? glm::normalize(transform.rotation) * Axes[handle.axis] : Axes[handle.axis];
+    float t;
+    if (!rayLineParam(ray, transform.position, dir, t))
+        return false;
+
+    m_dir = dir;
+    m_start_pos = transform.position;
+    m_start_t = t;
+    return true;
+}
+
+bool MoveTool::updateDrag(const Ray &ray, ECS::ECS &ecs, ECS::EntityID e)
+{
+    auto *raw_transform = getTransform(ecs, e);
+    if (!raw_transform)
+        return false;
+    
+    auto &transform = *raw_transform;
+    float t;
+    if (rayLineParam(ray, m_start_pos, m_dir, t)) {
+        transform.position = m_start_pos + m_dir * (t - m_start_t);
+    }
+    return true;
+}
+
+void RotateTool::buildHandles(const ViewportContext &view, ECS::ECS &ecs, ECS::EntityID e, std::vector<Handle> &out) const
+{
+    auto *t = getTransform(ecs, e);
+    if (!t)
+        return;
+    
+    auto &transform = *t;
     float radius = gizmoLength(view, transform.position);
 
     for (int i = 0; i < 3; i++) {
@@ -46,4 +95,40 @@ void RotateTool::buildHandles(const ViewportContext &view, const TransformCompon
         }
         out.push_back(std::move(ring));
     }
+}
+
+bool RotateTool::beginDrag(const Handle &handle, const Ray &ray, ECS::ECS &ecs, ECS::EntityID e)
+{
+    auto *raw_transform = getTransform(ecs, e);
+    if (!raw_transform)
+        return false;
+    
+    auto &transform = *raw_transform;
+    glm::quat rot = glm::normalize(transform.rotation);
+    glm::vec3 axis = rot * Axes[handle.axis];
+    glm::vec3 hit;
+    if (!rayPlane(ray, transform.position, axis, hit))
+        return false;
+    
+    m_axis = axis;
+    m_start_rot = rot;
+    m_start_vec = hit - transform.position;
+    return true;
+}
+
+bool RotateTool::updateDrag(const Ray &ray, ECS::ECS &ecs, ECS::EntityID e)
+{
+    auto *raw_transform = getTransform(ecs, e);
+    if (!raw_transform)
+        return false;
+    
+    auto &transform = *raw_transform;
+    glm::vec3 hit;
+    if (!rayPlane(ray, transform.position, m_axis, hit))
+        return true;
+    
+    glm::vec3 now = hit - transform.position;
+    float angle = std::atan2(glm::dot(glm::cross(m_start_vec, now), m_axis), glm::dot(m_start_vec, now));
+    transform.rotation = glm::angleAxis(angle, m_axis) * m_start_rot;
+    return true;
 }

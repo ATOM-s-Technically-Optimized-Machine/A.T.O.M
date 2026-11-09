@@ -4,8 +4,10 @@
 #include <vector>
 #include <imgui.h>
 
+#include "core/MathUtils.hpp"
+#include "core/ECS/ECS.hpp"
+
 struct ViewportContext;
-struct TransformComponent;
 struct Handle;
 
 class ITool {
@@ -18,7 +20,10 @@ class ITool {
         virtual void options() {}
         virtual void onKeys() {}
 
-        virtual void buildHandles(const ViewportContext &, const TransformComponent &, std::vector<Handle> &) const {}
+        virtual void buildHandles(const ViewportContext &, ECS::ECS &, ECS::EntityID, std::vector<Handle> &) const {}
+
+        virtual bool beginDrag(const Handle &, const Ray &, ECS::ECS &, ECS::EntityID) { return false; }
+        virtual bool updateDrag(const Ray &, ECS::ECS &, ECS::EntityID) { return false; }
 };
 
 #endif /* ITOOL_HPP_ */
