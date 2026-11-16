@@ -4,10 +4,6 @@
 #include <algorithm>
 #include <cmath>
 #include <imgui.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-#include "core/DefaultComponents.hpp"
-#include "core/ECS/ECS.hpp"
 #include "tools/viewport/ViewportContext.hpp"
 
 inline constexpr glm::vec3 Axes[3] = {{1,0,0}, {0,1,0}, {0,0,1}};
@@ -18,13 +14,14 @@ struct Segment {
     ImVec2 b;
 };
 
-enum class HandleStyle { Arrow, Ring };
+enum class HandleStyle { Arrow, Ring, Box };
 
 struct Handle {
     int axis;
     ImU32 color;
     HandleStyle style;
     std::vector<Segment> segments;
+    std::vector<ImVec2> points;
     bool hot = false;
 };
 
@@ -46,11 +43,6 @@ inline float distToSegment(ImVec2 p, const Segment &s)
     float t = len_sq > 0.0f ? std::clamp((apx * abx + apy * aby) / len_sq, 0.0f, 1.0f) : 0.0f;
     float dx = apx - abx * t, dy = apy - aby * t;
     return std::sqrt(dx * dx + dy * dy);
-}
-
-inline ImU32 withAlpha(ImU32 col, int alpha)
-{
-    return (col & ~IM_COL32_A_MASK) | ((ImU32)alpha << IM_COL32_A_SHIFT);
 }
 
 #endif /* GIZMO_HPP_ */

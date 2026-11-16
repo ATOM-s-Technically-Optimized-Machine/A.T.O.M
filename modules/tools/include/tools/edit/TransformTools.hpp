@@ -50,4 +50,20 @@ class RotateTool : public ITool {
         glm::vec3 m_start_vec;
 };
 
+class ScaleTool : public ITool {
+    public:
+        const char *name() const override { return "Scale"; }
+        ImGuiKey shortcut() const override { return ImGuiKey_B; }
+
+        void buildHandles(const ViewportContext &, ECS::ECS &, ECS::EntityID, std::vector<Handle> &) const override;
+
+        bool beginDrag(const Handle &, const Ray &, ECS::ECS &, ECS::EntityID) override;
+        bool updateDrag(const Ray &, ECS::ECS &, ECS::EntityID) override;
+    private:
+        int m_axis;
+        glm::vec3 m_dir;
+        glm::vec3 m_start_scale;
+        float m_start_t;
+};
+
 #endif /* TRANSFORMTOOLS_HPP_ */

@@ -1,4 +1,3 @@
-#include <cfloat>
 #include <renderer/glad/glad.h>
 #include <algorithm>
 #include <cmath>

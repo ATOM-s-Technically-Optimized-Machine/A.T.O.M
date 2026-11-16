@@ -131,7 +131,6 @@ int main()
     for (int i = 0; i < obj_count; i++) {
         int r = (std::rand() % mesh_count) + 1;
 
-        auto &mesh = mesh_pool.get(r);
         ECS::EntityID e = ecs.entityCreate();
         
         auto &e_mesh = ecs.entityAddComponent<MeshHandleComponent>(e);
@@ -163,6 +162,7 @@ int main()
     editor.registerTool<SelectTool>();
     editor.registerTool<MoveTool>();
     editor.registerTool<RotateTool>();
+    editor.registerTool<ScaleTool>();
 
     auto &e_viewer = editor.registerPanel<EntityViewerPanel>("Entity viewer", ecs);
 
