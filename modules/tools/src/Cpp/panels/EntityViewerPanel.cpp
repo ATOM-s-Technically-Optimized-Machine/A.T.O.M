@@ -82,6 +82,9 @@ void EntityViewerPanel::displayFieldEntry(FieldDescriptor entry, int id)
         case FieldType::Quat:
             ImGui::InputFloat4(label.c_str(), (float*)&((glm::quat*)(entry.ptr))->x);
             break;
+        case FieldType::Bool:
+            ImGui::Checkbox(label.c_str(), (bool*)entry.ptr);
+            break;
         default:
             break;
     }
